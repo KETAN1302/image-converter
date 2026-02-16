@@ -1,0 +1,50 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main
+  # Optional: manual deploy trigger
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup Node.js (Next.js + Sanity require >=20.19.5)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.5
+          cache: 'npm'
+
+      # 3️⃣ Cache npm packages for faster installs
+      - name: Cache npm
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      # 4️⃣ Install dependencies (fallback logic)
+      - name: Install Dependencies
+        run: |
+          echo "Running npm ci..."
+          npm ci || (echo "npm ci failed — running npm install instead" && npm install)
+
+      # 5️⃣ Build the project
+      - name: Build Project
+        run: npm run build
+ 
+      # 6️⃣ Deploy to Vercel (Production)
+      - name: Deploy to Vercel
+        run: npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
