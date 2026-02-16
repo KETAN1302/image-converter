@@ -1,5 +1,9 @@
 name: CI/CD - Deploy to Vercel
 
+permissions:
+  contents: read
+  deployments: write
+
 on:
   push:
     branches:
