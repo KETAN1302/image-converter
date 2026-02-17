@@ -171,9 +171,9 @@ export default function PdfToImage() {
   };
 
   return (
-    <main className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
+    <main className="min-h-screen">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-4">
+      <div className="sticky top-0 z-10 backdrop-blur-md border-b border-gray-200 px-4 py-4">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
             <DocumentTextIcon className="w-8 h-8 text-green-600" />
@@ -181,7 +181,7 @@ export default function PdfToImage() {
               PDF to Image Converter
             </span>
           </h1>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-gray-600 dark:text-white mt-1">
             Convert PDF pages to JPG, PNG, or WebP images
           </p>
         </div>
@@ -201,7 +201,7 @@ export default function PdfToImage() {
             ${
               isDragging
                 ? "border-green-500 bg-green-50 scale-102 shadow-lg"
-                : "border-gray-300 hover:border-green-400 bg-white hover:shadow-md"
+                : "border-gray-300 hover:border-green-400 bg-white dark:bg-gray-900 hover:shadow-md"
             }
             ${file ? "bg-green-50 border-green-300" : ""}
           `}
@@ -219,15 +219,15 @@ export default function PdfToImage() {
               <>
                 <DocumentArrowDownIcon
                   className={`w-16 h-16 mx-auto mb-4 transition-all duration-300 ${
-                    isDragging ? "text-green-500 scale-110" : "text-gray-400"
+                    isDragging ? "text-green-500 scale-110" : "text-gray-400 dark:text-white"
                   }`}
                 />
 
-                <p className="text-lg font-semibold text-gray-700 mb-2">
+                <p className="text-lg font-semibold text-gray-700 dark:text-white mb-2">
                   {isDragging ? "Drop PDF here" : "Drag & drop your PDF here"}
                 </p>
 
-                <p className="text-sm text-gray-500 mb-4">
+                <p className="text-sm text-gray-500 dark:text-white mb-4">
                   or click to select file (max 100MB)
                 </p>
 
@@ -241,8 +241,8 @@ export default function PdfToImage() {
                 <div className="flex items-center gap-3">
                   <DocumentTextIcon className="w-10 h-10 text-green-600" />
                   <div className="text-left">
-                    <p className="font-medium text-gray-700">{file.name}</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="font-medium text-gray-700 dark:text-white">{file.name}</p>
+                    <p className="text-sm text-gray-500 dark:text-white">
                       {formatFileSize(file.size)}
                     </p>
                   </div>
@@ -252,7 +252,7 @@ export default function PdfToImage() {
                     e.stopPropagation();
                     removeFile();
                   }}
-                  className="p-2 text-gray-400 hover:text-red-500"
+                  className="p-2 text-gray-400 dark:text-white hover:text-red-500"
                 >
                   <XMarkIcon className="w-5 h-5" />
                 </button>
@@ -278,9 +278,9 @@ export default function PdfToImage() {
         )}
 
         {/* Conversion Options */}
-        <div className="mb-6 p-4 bg-white rounded-xl shadow-sm border-2 border-green-100">
+        <div className="mb-6 p-4 bg-white dark:bg-gray-900 rounded-xl shadow-sm border-2 border-green-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-700 flex items-center gap-2">
+            <h2 className="font-semibold text-gray-700 dark:text-white flex items-center gap-2">
               <Cog6ToothIcon className="w-5 h-5 text-green-600" />
               Conversion Settings
             </h2>
@@ -289,13 +289,13 @@ export default function PdfToImage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Format Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">
+              <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
                 Output Format
               </label>
               <select
                 value={format}
                 onChange={(e) => setFormat(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 rounded-lg p-2 text-sm"
               >
                 <option value="jpg">JPG - Best for photos</option>
                 <option value="png">PNG - Lossless, transparency</option>
@@ -305,7 +305,7 @@ export default function PdfToImage() {
 
             {/* Page Range */}
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">
+              <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
                 Page Range
               </label>
               <input
@@ -313,7 +313,7 @@ export default function PdfToImage() {
                 value={pageRange}
                 onChange={(e) => setPageRange(e.target.value)}
                 placeholder="e.g., 1-5, 7, 9-12 or 'all'"
-                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 rounded-lg p-2 text-sm"
               />
               {totalPages && (
                 <p className="text-xs text-gray-500 mt-1">
@@ -323,10 +323,10 @@ export default function PdfToImage() {
             </div>
           </div>
 
-          <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
             {/* Quality Slider */}
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">
+              <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
                 Image Quality: {quality}%
               </label>
               <input
@@ -341,20 +341,20 @@ export default function PdfToImage() {
 
             {/* DPI Setting */}
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">
+              <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
                 DPI: {dpi}
               </label>
               <select
                 value={dpi}
                 onChange={(e) => setDpi(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 rounded-lg p-2 text-sm"
               >
                 <option value="72">72 DPI (Web/Screen)</option>
                 <option value="150">150 DPI (Standard)</option>
                 <option value="300">300 DPI (Print Quality)</option>
                 <option value="600">600 DPI (High Quality)</option>
               </select>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-white mt-1">
                 Higher DPI = larger file size, better quality
               </p>
             </div>
@@ -406,7 +406,7 @@ export default function PdfToImage() {
         {results.length > 0 && (
           <div className="mt-8">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-700">
+              <h2 className="text-lg font-semibold text-gray-700 dark:text-white">
                 Converted Images ({results.length} pages)
               </h2>
               <button
@@ -422,14 +422,12 @@ export default function PdfToImage() {
               {results.map((file, index) => (
                 <div
                   key={index}
-                  className="bg-white rounded-lg shadow-sm border overflow-hidden"
+                  className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border overflow-hidden"
                 >
                   <div className="aspect-square bg-gray-100 relative group">
-                    <Image
+                    <img
                       src={file.data}
                       alt={file.name}
-                      fill
-                      unoptimized
                       className="object-contain"
                     />
                     <a
@@ -443,7 +441,7 @@ export default function PdfToImage() {
                     </a>
                   </div>
                   <div className="p-2 text-center">
-                    <p className="text-xs text-gray-600">Page {file.page}</p>
+                    <p className="text-xs text-gray-600 dark:text-white">Page {file.page}</p>
                   </div>
                 </div>
               ))}
@@ -452,7 +450,7 @@ export default function PdfToImage() {
         )}
 
         {/* Tips */}
-        <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+        <div className="mt-8 p-4 bg-blue-50 dark:bg-gray-900 rounded-lg">
           <h3 className="font-medium text-blue-800 mb-2">
             📌 Tips for best results
           </h3>

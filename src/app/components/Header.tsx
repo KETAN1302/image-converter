@@ -11,26 +11,26 @@ export default function Header() {
         {/* Logo Section */}
         <div className="flex items-center gap-2">
           <PhotoIcon className="w-6 h-6 text-blue-600" />
-          <span className="font-semibold text-gray-900">ImageConverter</span>
+          <span className="font-semibold text-gray-900 dark:text-white">ImageConverter</span>
         </div>
 
         {/* Navigation Links */}
         <div className="flex items-center gap-4">
           <Link
             href="/coverter"
-            className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+            className="text-sm text-gray-60 dark:text-white hover:text-blue-600 transition-colors"
           >
             Image Tools
           </Link>
           <Link
             href="/pdf-to-image"
-            className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+            className="text-sm text-gray-600 dark:text-white hover:text-blue-600 transition-colors"
           >
             PDF Tools
           </Link>
           <Link
             href="/login"
-            className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+            className="text-sm text-gray-600 dark:text-white hover:text-blue-600 transition-colors"
           >
             Login
           </Link>

@@ -137,9 +137,9 @@ export default function PdfConverter() {
   };
 
   return (
-    <main className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
+    <main className="min-h-screen">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-4">
+      <div className="sticky top-0 z-10 backdrop-blur-md border-b border-gray-200 px-4 py-4">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
             <DocumentTextIcon className="w-8 h-8 text-red-500" />
@@ -147,7 +147,7 @@ export default function PdfConverter() {
               Image to PDF Converter
             </span>
           </h1>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-gray-600 dark:text-white mt-1">
             Convert your images to PDF documents instantly
           </p>
         </div>
@@ -167,7 +167,7 @@ export default function PdfConverter() {
             ${
               isDragging
                 ? "border-red-500 bg-red-50 scale-102 shadow-lg"
-                : "border-gray-300 hover:border-red-400 bg-white hover:shadow-md"
+                : "border-gray-300 dark:border-gray-700 hover:border-red-400 bg-white dark:bg-gray-900 hover:shadow-md"
             }
           `}
         >
@@ -187,11 +187,11 @@ export default function PdfConverter() {
               }`}
             />
 
-            <p className="text-lg font-semibold text-gray-700 mb-2">
+            <p className="text-lg font-semibold text-gray-700 dark:text-white mb-2">
               {isDragging ? "Drop images here" : "Drag & drop images here"}
             </p>
 
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-gray-500 dark:text-white mb-4">
               or click to select files (JPG, PNG, WebP, GIF)
             </p>
 
@@ -220,9 +220,9 @@ export default function PdfConverter() {
 
         {/* Selected Files */}
         {files.length > 0 && (
-          <div className="mb-6 p-4 bg-white rounded-xl shadow-sm">
+          <div className="mb-6 p-4 bg-white dark:bg-gray-900 rounded-xl shadow-sm">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="font-semibold text-gray-700">
+              <h2 className="font-semibold text-gray-700 dark:text-white">
                 Selected Images ({files.length})
               </h2>
               <button
@@ -237,26 +237,24 @@ export default function PdfConverter() {
               {files.map((file, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg"
+                  className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg"
                 >
                   <div className="w-10 h-10 rounded bg-gray-200 overflow-hidden shrink-0">
-                    <Image
+                    <img
                       src={URL.createObjectURL(file)}
                       alt={file.name}
-                      fill
                       className="object-cover"
-                      unoptimized
                     />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{file.name}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-white">
                       {formatFileSize(file.size)}
                     </p>
                   </div>
                   <button
                     onClick={() => removeFile(index)}
-                    className="p-1 text-gray-400 hover:text-red-500"
+                    className="p-1 text-gray-400 dark:text-white   hover:text-red-500"
                   >
                     <XMarkIcon className="w-4 h-4" />
                   </button>
@@ -267,9 +265,9 @@ export default function PdfConverter() {
         )}
 
         {/* PDF Options */}
-        <div className="mb-6 p-4 bg-white rounded-xl shadow-sm border-2 border-red-100">
+        <div className="mb-6 p-4 bg-white dark:bg-gray-900 rounded-xl shadow-sm border-2 border-red-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-700 flex items-center gap-2">
+            <h2 className="font-semibold text-gray-700 dark:text-white flex items-center gap-2">
               <Cog6ToothIcon className="w-5 h-5 text-red-500" />
               PDF Settings
             </h2>
@@ -277,13 +275,13 @@ export default function PdfConverter() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">
+              <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
                 Page Size
               </label>
               <select
                 value={pageSize}
                 onChange={(e) => setPageSize(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 rounded-lg p-2 text-sm"
               >
                 <option value="auto">Auto (match image size)</option>
                 <option value="a4">A4</option>
@@ -295,13 +293,13 @@ export default function PdfConverter() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">
+              <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
                 Orientation
               </label>
               <select
                 value={orientation}
                 onChange={(e) => setOrientation(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                className="w-full border border-gray-300 dark:border-gray-700 dark:text-white dark:bg-gray-800 rounded-lg p-2 text-sm"
               >
                 <option value="auto">Auto (follow image)</option>
                 <option value="portrait">Portrait</option>
@@ -310,9 +308,9 @@ export default function PdfConverter() {
             </div>
           </div>
 
-          <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">
+              <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
                 Image Quality: {quality}%
               </label>
               <input
@@ -323,13 +321,13 @@ export default function PdfConverter() {
                 onChange={(e) => setQuality(e.target.value)}
                 className="w-full"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-white mt-1">
                 Higher quality = larger file size
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">
+              <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
                 Margin: {margin}%
               </label>
               <input
@@ -340,7 +338,7 @@ export default function PdfConverter() {
                 onChange={(e) => setMargin(e.target.value)}
                 className="w-full"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-white mt-1">
                 Space around the image on the page
               </p>
             </div>
@@ -357,7 +355,7 @@ export default function PdfConverter() {
             ${
               files.length > 0 && !isConverting
                 ? "bg-linear-to-r from-red-600 to-blue-600 text-white hover:shadow-lg"
-                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-gray-300 dark:bg-gray-800 text-gray-500 cursor-not-allowed"
             }
           `}
         >
@@ -391,14 +389,14 @@ export default function PdfConverter() {
 
         {/* Result */}
         {result && (
-          <div className="mt-8 p-6 bg-white rounded-xl shadow-sm border-2 border-green-100">
+          <div className="mt-8 p-6 bg-white dark:bg-gray-900 rounded-xl shadow-sm border-2 border-green-100 dark:border-gray-700">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center">
                 <DocumentTextIcon className="w-8 h-8 text-green-600" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-gray-700">{result.name}</h3>
-                <p className="text-sm text-gray-500">
+                <h3 className="font-semibold text-gray-700 dark:text-white">{result.name}</h3>
+                <p className="text-sm text-gray-500 dark:text-white">
                   {result.pageCount} pages • {formatFileSize(result.size)}
                 </p>
                 {result.failedCount > 0 && (
@@ -420,7 +418,7 @@ export default function PdfConverter() {
         )}
 
         {/* Tips */}
-        <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+        <div className="mt-8 p-4 bg-blue-50 dark:bg-gray-900 rounded-lg">
           <h3 className="font-medium text-blue-800 mb-2">
             💡 Tips for best results
           </h3>

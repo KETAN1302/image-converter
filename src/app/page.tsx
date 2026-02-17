@@ -6,7 +6,7 @@ import WhyChoose from "./components/WhyChoose";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-white dark:bg-black">
       <Header />
       <HeroSection />
       <ToolsGrid />

@@ -22,13 +22,13 @@ export default function HeroSection() {
       </div>
 
       {/* Main Heading */}
-      <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+      <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
         Convert Images & PDFs
         <span className="text-blue-600"> Instantly</span>
       </h1>
 
       {/* Subheading */}
-      <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
+      <p className="text-lg text-gray-600 dark:text-white max-w-2xl mx-auto mb-8">
         Free, fast, and private. Convert between images and PDF formats. No
         sign-up required.
       </p>

@@ -298,14 +298,14 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
+    <main className="min-h-screen">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3">
+      <div className="sticky top-0 z-10 backdrop-blur-md border-b border-gray-200 px-4 py-3">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-xl md:text-4xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Image Converter
           </h1>
-          <p className="text-xs md:text-base text-gray-600">
+          <p className="text-xs md:text-base text-gray-600 dark:text-white">
             Convert and optimize your images
           </p>
         </div>
@@ -326,18 +326,20 @@ export default function Home() {
               ${
                 isDragging
                   ? "border-blue-500 bg-blue-50 scale-102 shadow-lg"
-                  : "border-gray-300 hover:border-gray-400 bg-white hover:shadow-md"
+                  : "border-gray-300 dark:border-gray-700 hover:border-gray-400 bg-white dark:bg-gray-900 hover:shadow-md"
               }
             `}
           >
             <div className="text-center">
               <CloudArrowUpIcon
                 className={`w-12 h-12 md:w-20 md:h-20 mx-auto mb-2 md:mb-4 transition-all duration-300 ${
-                  isDragging ? "text-blue-500 scale-110" : "text-gray-400"
+                  isDragging
+                    ? "text-blue-500 scale-110"
+                    : "text-gray-400 dark:text-white"
                 }`}
               />
 
-              <p className="text-base md:text-xl font-semibold text-gray-700 mb-1 md:mb-2">
+              <p className="text-base md:text-xl font-semibold text-gray-700 dark:text-white mb-1 md:mb-2">
                 {isDragging
                   ? "Drop here"
                   : isMobile
@@ -345,10 +347,10 @@ export default function Home() {
                     : "Drag & drop here"}
               </p>
 
-              <p className="text-xs md:text-sm text-gray-500 mb-3 md:mb-4">
+              <p className="text-xs md:text-sm text-gray-500 dark:text-white mb-3 md:mb-4">
                 {isMobile
                   ? "JPG, PNG, GIF, WebP"
-                  : "Supports: JPG, PNG, GIF, WebP, AVIF, TIFF"}
+                  : "Supports: JPG, PNG, WebP, AVIF"}
               </p>
 
               {/* Upload Buttons */}
@@ -420,9 +422,9 @@ export default function Home() {
 
         {/* Conversion Options */}
         <div className="mb-4 md:mb-6">
-          <div className="p-4 md:p-6 bg-white rounded-xl shadow-sm border-2 border-blue-100">
+          <div className="p-4 md:p-6 bg-white dark:bg-gray-900 rounded-xl shadow-sm border-2 border-blue-100 dark:border-gray-700">
             <div className="flex items-center mb-3 md:mb-4">
-              <h2 className="text-base md:text-lg font-semibold text-gray-700 flex items-center gap-2">
+              <h2 className="text-base md:text-lg font-semibold text-gray-700 dark:text-white flex items-center gap-2">
                 <span className="w-1 h-5 md:h-6 bg-blue-600 rounded-full"></span>
                 Conversion Options
               </h2>
@@ -433,13 +435,13 @@ export default function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 {/* Format Selection */}
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-600 mb-1 md:mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-600 dark:text-white mb-1 md:mb-2">
                     Output Format
                   </label>
                   <select
                     value={format}
                     onChange={(e) => setFormat(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg p-2.5 md:p-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    className="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-2.5 md:p-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white dark:bg-gray-800"
                   >
                     <option value="png">PNG - Lossless</option>
                     <option value="jpg">JPG - Best for photos</option>
@@ -451,7 +453,7 @@ export default function Home() {
                 {/* Quality Slider */}
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="text-xs md:text-sm font-medium text-gray-600">
+                    <label className="text-xs md:text-sm font-medium text-gray-600 dark:text-white">
                       Quality
                     </label>
                     <span className="text-xs md:text-sm bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">
@@ -466,7 +468,7 @@ export default function Home() {
                     onChange={(e) => setQuality(e.target.value)}
                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                   />
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <div className="flex justify-between text-xs text-gray-500 dark:text-white mt-1">
                     <span>Small file</span>
                     <span>High quality</span>
                   </div>
@@ -474,13 +476,13 @@ export default function Home() {
               </div>
 
               {/* Dimensions */}
-              <div className="pt-3 border-t border-gray-200">
-                <h3 className="text-sm font-medium text-gray-600 mb-3">
+              <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                <h3 className="text-sm font-medium text-gray-600 dark:text-white mb-3">
                   Dimensions (Optional)
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">
+                    <label className="block text-xs text-gray-500 dark:text-white mb-1">
                       Width (px)
                     </label>
                     <input
@@ -493,7 +495,7 @@ export default function Home() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">
+                    <label className="block text-xs text-gray-500 dark:text-white mb-1">
                       Height (px)
                     </label>
                     <input
@@ -506,7 +508,7 @@ export default function Home() {
                     />
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-500 dark:text-white mt-2">
                   Leave empty to maintain original aspect ratio
                 </p>
               </div>
@@ -516,9 +518,9 @@ export default function Home() {
 
         {/* Selected Files Preview */}
         {files.length > 0 && (
-          <div className="mb-4 md:mb-6 p-4 md:p-6 bg-white rounded-xl shadow-sm">
+          <div className="mb-4 md:mb-6 p-4 md:p-6 bg-white dark:bg-gray-900 rounded-xl shadow-sm">
             <div className="flex justify-between items-center mb-3 md:mb-4">
-              <h2 className="text-base md:text-lg font-semibold text-gray-700 flex items-center gap-2">
+              <h2 className="text-base md:text-lg font-semibold text-gray-700 dark:text-white flex items-center gap-2">
                 <span className="w-1 h-5 md:h-6 bg-green-600 rounded-full"></span>
                 Selected Files ({files.length})
               </h2>
@@ -535,7 +537,7 @@ export default function Home() {
               {files.map((file, index) => (
                 <div
                   key={`${file.name}-${index}`}
-                  className="flex items-center gap-2 md:gap-4 p-2 md:p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-2 md:gap-4 p-2 md:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   {/* Thumbnail */}
                   <div className="w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden bg-gray-200 border border-gray-300 shrink-0 relative">
@@ -553,10 +555,10 @@ export default function Home() {
 
                   {/* File Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs md:text-sm font-medium text-gray-700 truncate">
+                    <p className="text-xs md:text-sm font-medium text-gray-700 dark:text-white truncate">
                       {file.name}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-white">
                       {formatFileSize(file.size)}
                     </p>
 
@@ -592,7 +594,7 @@ export default function Home() {
                   {/* Remove Button */}
                   <button
                     onClick={() => removeFile(index)}
-                    className="p-1.5 md:p-2 text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50"
+                    className="p-1.5 md:p-2 text-gray-400 dark:text-white hover:text-red-500 transition-colors rounded-full hover:bg-red-50 dark:hover:bg-gray-800"
                   >
                     <XMarkIcon className="w-4 h-4 md:w-5 md:h-5" />
                   </button>
@@ -637,7 +639,7 @@ export default function Home() {
         {/* Results */}
         {results.length > 0 && (
           <div className="mt-6 md:mt-8">
-            <h2 className="text-lg md:text-xl font-semibold text-gray-700 mb-3 md:mb-4 flex items-center gap-2">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-700 dark:text-white mb-3 md:mb-4 flex items-center gap-2">
               <span className="w-1 h-5 md:h-6 bg-purple-600 rounded-full"></span>
               Converted Images
             </h2>
@@ -653,7 +655,7 @@ export default function Home() {
                 return (
                   <div
                     key={i}
-                    className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                    className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow"
                   >
                     {/* Image Container */}
                     <div className="aspect-video bg-gray-100 relative group">
@@ -682,12 +684,12 @@ export default function Home() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <p
-                            className="text-sm font-medium text-gray-700 truncate"
+                            className="text-sm font-medium text-gray-700 dark:text-white truncate"
                             title={file.name}
                           >
                             {file.name}
                           </p>
-                          <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-white  mt-1">
                             <span>{formatFileSize(file.size)}</span>
                             {file.width && file.height && (
                               <>
@@ -702,7 +704,7 @@ export default function Home() {
                           {/* Size Comparison */}
                           {savings && (
                             <div className="mt-2 flex items-center gap-2">
-                              <DocumentTextIcon className="w-3 h-3 text-gray-400" />
+                              <DocumentTextIcon className="w-3 h-3 text-gray-400 dark:text-white" />
                               <span
                                 className={`text-xs font-medium ${savings.isReduced ? "text-green-600" : "text-orange-600"}`}
                               >
@@ -710,7 +712,7 @@ export default function Home() {
                                 {Math.abs(Number(savings.percentage))}%
                               </span>
                               {originalFile && (
-                                <span className="text-xs text-gray-400">
+                                <span className="text-xs text-gray-400 dark:text-white">
                                   from {formatFileSize(originalFile.size)}
                                 </span>
                               )}
@@ -722,7 +724,7 @@ export default function Home() {
                         <a
                           href={file.data}
                           download={file.name}
-                          className="shrink-0 p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="shrink-0 p-2 text-gray-400 dark:text-white hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="Download"
                         >
                           <ArrowDownTrayIcon className="w-4 h-4" />
