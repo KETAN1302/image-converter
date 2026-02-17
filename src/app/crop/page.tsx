@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
-import Header from "@/app/components/Header";
-import Footer from "@/app/components/Footer";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import {
   CloudArrowUpIcon,
@@ -34,9 +32,25 @@ export default function CropImage() {
   const [result, setResult] = useState<CroppedFile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [dragHandle, setDragHandle] = useState<string | null>(null);
+  const [startX, setStartX] = useState(0);
+  const [startY, setStartY] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+  const cropContainerRef = useRef<HTMLDivElement>(null);
+
+  // Detect mobile on mount
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = e.target.files?.[0];
@@ -112,6 +126,238 @@ export default function CropImage() {
   const handleCropChange = (key: string, value: number) => {
     const updated = { ...cropCoords, [key]: Math.max(0, value) };
     setCropCoords(updated);
+  };
+
+  const getMousePos = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cropContainerRef.current) return { x: 0, y: 0 };
+    const rect = cropContainerRef.current.getBoundingClientRect();
+    const img = imgRef.current;
+    if (!img) return { x: 0, y: 0 };
+
+    const imgRect = img.getBoundingClientRect();
+    const x = e.clientX - imgRect.left;
+    const y = e.clientY - imgRect.top;
+
+    return { x, y };
+  };
+
+  const getHandleAtPosition = (
+    x: number,
+    y: number,
+    threshold?: number
+  ): string | null => {
+    const touchThreshold = isMobile ? 15 : 10;
+    const finalThreshold = threshold || touchThreshold;
+    const scaleX = (imgRef.current?.width || 0) / imgDimensions.width;
+    const scaleY = (imgRef.current?.height || 0) / imgDimensions.height;
+
+    const cropX = cropCoords.x * scaleX;
+    const cropY = cropCoords.y * scaleY;
+    const cropW = cropCoords.width * scaleX;
+    const cropH = cropCoords.height * scaleY;
+
+    // Check corners
+    if (
+      Math.abs(x - cropX) < finalThreshold &&
+      Math.abs(y - cropY) < finalThreshold
+    ) {
+      return "nw-resize";
+    }
+    if (
+      Math.abs(x - (cropX + cropW)) < finalThreshold &&
+      Math.abs(y - cropY) < finalThreshold
+    ) {
+      return "ne-resize";
+    }
+    if (
+      Math.abs(x - cropX) < finalThreshold &&
+      Math.abs(y - (cropY + cropH)) < finalThreshold
+    ) {
+      return "sw-resize";
+    }
+    if (
+      Math.abs(x - (cropX + cropW)) < finalThreshold &&
+      Math.abs(y - (cropY + cropH)) < finalThreshold
+    ) {
+      return "se-resize";
+    }
+
+    // Check edges
+    if (Math.abs(x - cropX) < finalThreshold && y > cropY && y < cropY + cropH) {
+      return "w-resize";
+    }
+    if (
+      Math.abs(x - (cropX + cropW)) < finalThreshold &&
+      y > cropY &&
+      y < cropY + cropH
+    ) {
+      return "e-resize";
+    }
+    if (Math.abs(y - cropY) < finalThreshold && x > cropX && x < cropX + cropW) {
+      return "n-resize";
+    }
+    if (
+      Math.abs(y - (cropY + cropH)) < finalThreshold &&
+      x > cropX &&
+      x < cropX + cropW
+    ) {
+      return "s-resize";
+    }
+
+    // Check if inside crop area (for moving)
+    if (
+      x > cropX &&
+      x < cropX + cropW &&
+      y > cropY &&
+      y < cropY + cropH
+    ) {
+      return "move";
+    }
+
+    return null;
+  };
+
+  const handleImageMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!imgRef.current) return;
+    const { x, y } = getMousePos(e);
+    const handle = getHandleAtPosition(x, y);
+
+    if (handle) {
+      setIsDrawing(true);
+      setDragHandle(handle);
+      setStartX(x);
+      setStartY(y);
+    }
+  };
+
+  const handleImageMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!imgRef.current) return;
+    const { x, y } = getMousePos(e);
+
+    if (!isDrawing) {
+      const handle = getHandleAtPosition(x, y);
+      if (cropContainerRef.current) {
+        cropContainerRef.current.style.cursor = handle || "default";
+      }
+      return;
+    }
+
+    const scaleX = imgDimensions.width / (imgRef.current?.width || 1);
+    const scaleY = imgDimensions.height / (imgRef.current?.height || 1);
+
+    const deltaX = (x - startX) * scaleX;
+    const deltaY = (y - startY) * scaleY;
+
+    let newCoords = { ...cropCoords };
+
+    if (dragHandle === "move") {
+      newCoords.x = Math.max(0, Math.min(cropCoords.x + deltaX, imgDimensions.width - cropCoords.width));
+      newCoords.y = Math.max(0, Math.min(cropCoords.y + deltaY, imgDimensions.height - cropCoords.height));
+    } else if (dragHandle === "nw-resize") {
+      newCoords.x = Math.max(0, cropCoords.x + deltaX);
+      newCoords.y = Math.max(0, cropCoords.y + deltaY);
+      newCoords.width = Math.min(
+        Math.max(50, cropCoords.width - deltaX),
+        imgDimensions.width - newCoords.x
+      );
+      newCoords.height = Math.min(
+        Math.max(50, cropCoords.height - deltaY),
+        imgDimensions.height - newCoords.y
+      );
+    } else if (dragHandle === "ne-resize") {
+      newCoords.y = Math.max(0, cropCoords.y + deltaY);
+      newCoords.width = Math.min(
+        Math.max(50, cropCoords.width + deltaX),
+        imgDimensions.width - cropCoords.x
+      );
+      newCoords.height = Math.min(
+        Math.max(50, cropCoords.height - deltaY),
+        imgDimensions.height - newCoords.y
+      );
+    } else if (dragHandle === "sw-resize") {
+      newCoords.x = Math.max(0, cropCoords.x + deltaX);
+      newCoords.width = Math.min(
+        Math.max(50, cropCoords.width - deltaX),
+        imgDimensions.width - newCoords.x
+      );
+      newCoords.height = Math.min(
+        Math.max(50, cropCoords.height + deltaY),
+        imgDimensions.height - cropCoords.y
+      );
+    } else if (dragHandle === "se-resize") {
+      newCoords.width = Math.min(
+        Math.max(50, cropCoords.width + deltaX),
+        imgDimensions.width - cropCoords.x
+      );
+      newCoords.height = Math.min(
+        Math.max(50, cropCoords.height + deltaY),
+        imgDimensions.height - cropCoords.y
+      );
+    } else if (dragHandle === "n-resize") {
+      newCoords.y = Math.max(0, cropCoords.y + deltaY);
+      newCoords.height = Math.min(
+        Math.max(50, cropCoords.height - deltaY),
+        imgDimensions.height - newCoords.y
+      );
+    } else if (dragHandle === "s-resize") {
+      newCoords.height = Math.min(
+        Math.max(50, cropCoords.height + deltaY),
+        imgDimensions.height - cropCoords.y
+      );
+    } else if (dragHandle === "w-resize") {
+      newCoords.x = Math.max(0, cropCoords.x + deltaX);
+      newCoords.width = Math.min(
+        Math.max(50, cropCoords.width - deltaX),
+        imgDimensions.width - newCoords.x
+      );
+    } else if (dragHandle === "e-resize") {
+      newCoords.width = Math.min(
+        Math.max(50, cropCoords.width + deltaX),
+        imgDimensions.width - cropCoords.x
+      );
+    }
+
+    setCropCoords(newCoords);
+    setStartX(x);
+    setStartY(y);
+  };
+
+  const handleImageMouseUp = () => {
+    setIsDrawing(false);
+    setDragHandle(null);
+  };
+
+  // Touch handlers for mobile
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!imgRef.current) return;
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent("mousedown", {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+    }) as any;
+    handleImageMouseDown({
+      ...mouseEvent,
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+    } as any);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isDrawing) return;
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent("mousemove", {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+    }) as any;
+    handleImageMouseMove({
+      ...mouseEvent,
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+    } as any);
+  };
+
+  const handleTouchEnd = () => {
+    handleImageMouseUp();
   };
 
   const cropImage = async () => {
@@ -331,16 +577,340 @@ export default function CropImage() {
             {/* Preview */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-white mb-3">
-                Preview
+                Preview - Click and drag to crop, or use handles to resize
               </label>
-              <div className="border-2 border-gray-300 dark:border-gray-600 rounded-lg overflow-auto max-h-96 flex justify-center bg-gray-50 dark:bg-gray-800 p-4">
+              <div
+                ref={cropContainerRef}
+                onMouseDown={handleImageMouseDown}
+                onMouseMove={handleImageMouseMove}
+                onMouseUp={handleImageMouseUp}
+                onMouseLeave={handleImageMouseUp}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                className="border-2 border-gray-300 dark:border-gray-600 rounded-lg flex justify-center items-center bg-gray-50 dark:bg-gray-800 p-2 md:p-3 relative select-none touch-none"
+                style={{
+                  maxHeight: isMobile ? "250px" : "300px",
+                  height: "auto",
+                }}
+              >
                 {preview && (
-                  <img
-                    ref={imgRef}
-                    src={preview}
-                    alt="Preview"
-                    className="max-w-full max-h-96"
-                  />
+                  <div className="relative inline-block">
+                    <img
+                      ref={imgRef}
+                      src={preview}
+                      alt="Preview"
+                      className="max-w-full block"
+                      style={{
+                        maxHeight: isMobile ? "230px" : "280px",
+                      }}
+                      draggable={false}
+                    />
+
+                    {/* Crop Overlay */}
+                    <svg
+                      className="absolute top-0 left-0 pointer-events-none"
+                      width={imgRef.current?.width || 0}
+                      height={imgRef.current?.height || 0}
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                      }}
+                    >
+                      {/* Darkened areas outside crop */}
+                      <defs>
+                        <mask id="crop-mask">
+                          <rect width="100%" height="100%" fill="white" />
+                          <rect
+                            x={
+                              (cropCoords.x /
+                                imgDimensions.width) *
+                              (imgRef.current?.width || 0)
+                            }
+                            y={
+                              (cropCoords.y /
+                                imgDimensions.height) *
+                              (imgRef.current?.height || 0)
+                            }
+                            width={
+                              (cropCoords.width /
+                                imgDimensions.width) *
+                              (imgRef.current?.width || 0)
+                            }
+                            height={
+                              (cropCoords.height /
+                                imgDimensions.height) *
+                              (imgRef.current?.height || 0)
+                            }
+                            fill="black"
+                          />
+                        </mask>
+                      </defs>
+
+                      {/* Semi-transparent overlay on excluded areas */}
+                      <rect
+                        width="100%"
+                        height="100%"
+                        fill="rgba(0, 0, 0, 0.5)"
+                        mask="url(#crop-mask)"
+                      />
+
+                      {/* Crop box border */}
+                      <rect
+                        x={
+                          (cropCoords.x /
+                            imgDimensions.width) *
+                          (imgRef.current?.width || 0)
+                        }
+                        y={
+                          (cropCoords.y /
+                            imgDimensions.height) *
+                          (imgRef.current?.height || 0)
+                        }
+                        width={
+                          (cropCoords.width /
+                            imgDimensions.width) *
+                          (imgRef.current?.width || 0)
+                        }
+                        height={
+                          (cropCoords.height /
+                            imgDimensions.height) *
+                          (imgRef.current?.height || 0)
+                        }
+                        fill="none"
+                        stroke="#3b82f6"
+                        strokeWidth="2"
+                        strokeDasharray="4"
+                      />
+
+                      {/* Grid lines */}
+                      <g
+                        stroke="#3b82f6"
+                        strokeWidth="1"
+                        opacity="0.3"
+                      >
+                        <line
+                          x1={
+                            (cropCoords.x /
+                              imgDimensions.width) *
+                              (imgRef.current?.width || 0) +
+                            ((cropCoords.width /
+                              imgDimensions.width) *
+                              (imgRef.current?.width || 0)) /
+                              3
+                          }
+                          y1={
+                            (cropCoords.y /
+                              imgDimensions.height) *
+                            (imgRef.current?.height || 0)
+                          }
+                          x2={
+                            (cropCoords.x /
+                              imgDimensions.width) *
+                              (imgRef.current?.width || 0) +
+                            ((cropCoords.width /
+                              imgDimensions.width) *
+                              (imgRef.current?.width || 0)) /
+                              3
+                          }
+                          y2={
+                            (cropCoords.y /
+                              imgDimensions.height) *
+                              (imgRef.current?.height || 0) +
+                            (cropCoords.height /
+                              imgDimensions.height) *
+                              (imgRef.current?.height || 0)
+                          }
+                        />
+                        <line
+                          x1={
+                            (cropCoords.x /
+                              imgDimensions.width) *
+                              (imgRef.current?.width || 0) +
+                            ((cropCoords.width /
+                              imgDimensions.width) *
+                              (imgRef.current?.width || 0)) *
+                              (2 / 3)
+                          }
+                          y1={
+                            (cropCoords.y /
+                              imgDimensions.height) *
+                            (imgRef.current?.height || 0)
+                          }
+                          x2={
+                            (cropCoords.x /
+                              imgDimensions.width) *
+                              (imgRef.current?.width || 0) +
+                            ((cropCoords.width /
+                              imgDimensions.width) *
+                              (imgRef.current?.width || 0)) *
+                              (2 / 3)
+                          }
+                          y2={
+                            (cropCoords.y /
+                              imgDimensions.height) *
+                              (imgRef.current?.height || 0) +
+                            (cropCoords.height /
+                              imgDimensions.height) *
+                              (imgRef.current?.height || 0)
+                          }
+                        />
+                        <line
+                          x1={
+                            (cropCoords.x /
+                              imgDimensions.width) *
+                            (imgRef.current?.width || 0)
+                          }
+                          y1={
+                            (cropCoords.y /
+                              imgDimensions.height) *
+                              (imgRef.current?.height || 0) +
+                            ((cropCoords.height /
+                              imgDimensions.height) *
+                              (imgRef.current?.height || 0)) /
+                              3
+                          }
+                          x2={
+                            (cropCoords.x /
+                              imgDimensions.width) *
+                              (imgRef.current?.width || 0) +
+                            (cropCoords.width /
+                              imgDimensions.width) *
+                              (imgRef.current?.width || 0)
+                          }
+                          y2={
+                            (cropCoords.y /
+                              imgDimensions.height) *
+                              (imgRef.current?.height || 0) +
+                            ((cropCoords.height /
+                              imgDimensions.height) *
+                              (imgRef.current?.height || 0)) /
+                              3
+                          }
+                        />
+                        <line
+                          x1={
+                            (cropCoords.x /
+                              imgDimensions.width) *
+                            (imgRef.current?.width || 0)
+                          }
+                          y1={
+                            (cropCoords.y /
+                              imgDimensions.height) *
+                              (imgRef.current?.height || 0) +
+                            ((cropCoords.height /
+                              imgDimensions.height) *
+                              (imgRef.current?.height || 0)) *
+                              (2 / 3)
+                          }
+                          x2={
+                            (cropCoords.x /
+                              imgDimensions.width) *
+                              (imgRef.current?.width || 0) +
+                            (cropCoords.width /
+                              imgDimensions.width) *
+                              (imgRef.current?.width || 0)
+                          }
+                          y2={
+                            (cropCoords.y /
+                              imgDimensions.height) *
+                              (imgRef.current?.height || 0) +
+                            ((cropCoords.height /
+                              imgDimensions.height) *
+                              (imgRef.current?.height || 0)) *
+                              (2 / 3)
+                          }
+                        />
+                      </g>
+
+                      {/* Corner handles */}
+                      <circle
+                        cx={
+                          (cropCoords.x /
+                            imgDimensions.width) *
+                          (imgRef.current?.width || 0)
+                        }
+                        cy={
+                          (cropCoords.y /
+                            imgDimensions.height) *
+                          (imgRef.current?.height || 0)
+                        }
+                        r={isMobile ? "10" : "6"}
+                        fill="#3b82f6"
+                        stroke="white"
+                        strokeWidth="2"
+                        className="pointer-events-auto"
+                        style={{ cursor: "nw-resize" }}
+                      />
+                      <circle
+                        cx={
+                          (cropCoords.x /
+                            imgDimensions.width) *
+                            (imgRef.current?.width || 0) +
+                          (cropCoords.width /
+                            imgDimensions.width) *
+                            (imgRef.current?.width || 0)
+                        }
+                        cy={
+                          (cropCoords.y /
+                            imgDimensions.height) *
+                          (imgRef.current?.height || 0)
+                        }
+                        r={isMobile ? "10" : "6"}
+                        fill="#3b82f6"
+                        stroke="white"
+                        strokeWidth="2"
+                        className="pointer-events-auto"
+                        style={{ cursor: "ne-resize" }}
+                      />
+                      <circle
+                        cx={
+                          (cropCoords.x /
+                            imgDimensions.width) *
+                          (imgRef.current?.width || 0)
+                        }
+                        cy={
+                          (cropCoords.y /
+                            imgDimensions.height) *
+                            (imgRef.current?.height || 0) +
+                          (cropCoords.height /
+                            imgDimensions.height) *
+                            (imgRef.current?.height || 0)
+                        }
+                        r={isMobile ? "10" : "6"}
+                        fill="#3b82f6"
+                        stroke="white"
+                        strokeWidth="2"
+                        className="pointer-events-auto"
+                        style={{ cursor: "sw-resize" }}
+                      />
+                      <circle
+                        cx={
+                          (cropCoords.x /
+                            imgDimensions.width) *
+                            (imgRef.current?.width || 0) +
+                          (cropCoords.width /
+                            imgDimensions.width) *
+                            (imgRef.current?.width || 0)
+                        }
+                        cy={
+                          (cropCoords.y /
+                            imgDimensions.height) *
+                            (imgRef.current?.height || 0) +
+                          (cropCoords.height /
+                            imgDimensions.height) *
+                            (imgRef.current?.height || 0)
+                        }
+                        r={isMobile ? "10" : "6"}
+                        fill="#3b82f6"
+                        stroke="white"
+                        strokeWidth="2"
+                        className="pointer-events-auto"
+                        style={{ cursor: "se-resize" }}
+                      />
+                    </svg>
+                  </div>
                 )}
               </div>
             </div>
@@ -350,10 +920,10 @@ export default function CropImage() {
               <label className="block text-sm font-medium text-gray-700 dark:text-white mb-3">
                 Crop Coordinates
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-2 md:gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-white mb-1">
-                    X Position
+                    X
                   </label>
                   <input
                     type="number"
@@ -361,12 +931,12 @@ export default function CropImage() {
                     onChange={(e) =>
                       handleCropChange("x", parseInt(e.target.value))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 py-2 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-white mb-1">
-                    Y Position
+                    Y
                   </label>
                   <input
                     type="number"
@@ -374,12 +944,12 @@ export default function CropImage() {
                     onChange={(e) =>
                       handleCropChange("y", parseInt(e.target.value))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 py-2 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-white mb-1">
-                    Width
+                    W
                   </label>
                   <input
                     type="number"
@@ -387,12 +957,12 @@ export default function CropImage() {
                     onChange={(e) =>
                       handleCropChange("width", parseInt(e.target.value))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 py-2 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-white mb-1">
-                    Height
+                    H
                   </label>
                   <input
                     type="number"
@@ -400,7 +970,7 @@ export default function CropImage() {
                     onChange={(e) =>
                       handleCropChange("height", parseInt(e.target.value))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 py-2 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>

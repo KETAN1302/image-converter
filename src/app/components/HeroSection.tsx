@@ -7,7 +7,6 @@ import {
   PhotoIcon,
   ArrowRightIcon,
   DocumentTextIcon,
-  DocumentArrowUpIcon,
 } from "@heroicons/react/24/outline";
 
 export default function HeroSection() {

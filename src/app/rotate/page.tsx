@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import Header from "@/app/components/Header";
-import Footer from "@/app/components/Footer";
 import Image from "next/image";
 import {
   CloudArrowUpIcon,
