@@ -460,101 +460,103 @@ export default function Home() {
         )}
 
         {/* Conversion Options */}
-        <div className="mb-4 md:mb-6">
-          <div className="p-4 md:p-6 bg-white dark:bg-gray-900 rounded-xl shadow-sm border-2 border-blue-100 dark:border-gray-700">
-            <div className="flex items-center mb-3 md:mb-4">
-              <h2 className="text-base md:text-lg font-semibold text-gray-700 dark:text-white flex items-center gap-2">
-                <span className="w-1 h-5 md:h-6 bg-blue-600 rounded-full"></span>
-                Conversion Options
-              </h2>
-            </div>
-
-            <div className="space-y-4 md:space-y-6">
-              {/* Basic Options */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                {/* Format Selection */}
-                <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-600 dark:text-white mb-1 md:mb-2">
-                    Output Format
-                  </label>
-                  <select
-                    value={format}
-                    onChange={(e) => setFormat(e.target.value)}
-                    className="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-2.5 md:p-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white dark:bg-gray-800"
-                  >
-                    <option value="png">PNG - Lossless</option>
-                    <option value="jpg">JPG - Best for photos</option>
-                    <option value="jpeg">JPEG - Best for photos</option>
-                    <option value="webp">WebP - Modern format</option>
-                    <option value="avif">AVIF - High compression</option>
-                  </select>
-                </div>
-
-                {/* Quality Slider */}
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="text-xs md:text-sm font-medium text-gray-600 dark:text-white">
-                      Quality
-                    </label>
-                    <span className="text-xs md:text-sm bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">
-                      {quality}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="100"
-                    value={quality}
-                    onChange={(e) => setQuality(e.target.value)}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                  />
-                  <div className="flex justify-between text-xs text-gray-500 dark:text-white mt-1">
-                    <span>Small file</span>
-                    <span>High quality</span>
-                  </div>
-                </div>
+        {files.length > 0 && (
+          <div className="mb-4 md:mb-6">
+            <div className="p-4 md:p-6 bg-white dark:bg-gray-900 rounded-xl shadow-sm border-2 border-blue-100 dark:border-gray-700">
+              <div className="flex items-center mb-3 md:mb-4">
+                <h2 className="text-base md:text-lg font-semibold text-gray-700 dark:text-white flex items-center gap-2">
+                  <span className="w-1 h-5 md:h-6 bg-blue-600 rounded-full"></span>
+                  Conversion Options
+                </h2>
               </div>
 
-              {/* Dimensions */}
-              <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-                <h3 className="text-sm font-medium text-gray-600 dark:text-white mb-3">
-                  Dimensions (Optional)
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-4 md:space-y-6">
+                {/* Basic Options */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                  {/* Format Selection */}
                   <div>
-                    <label className="block text-xs text-gray-500 dark:text-white mb-1">
-                      Width (px)
+                    <label className="block text-xs md:text-sm font-medium text-gray-600 dark:text-white mb-1 md:mb-2">
+                      Output Format
                     </label>
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="Auto"
-                      value={width}
-                      onChange={(e) => setWidth(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg p-2.5 md:p-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                    />
+                    <select
+                      value={format}
+                      onChange={(e) => setFormat(e.target.value)}
+                      className="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-2.5 md:p-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white dark:bg-gray-800"
+                    >
+                      <option value="png">PNG - Lossless</option>
+                      <option value="jpg">JPG - Best for photos</option>
+                      <option value="jpeg">JPEG - Best for photos</option>
+                      <option value="webp">WebP - Modern format</option>
+                      <option value="avif">AVIF - High compression</option>
+                    </select>
                   </div>
+
+                  {/* Quality Slider */}
                   <div>
-                    <label className="block text-xs text-gray-500 dark:text-white mb-1">
-                      Height (px)
-                    </label>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-xs md:text-sm font-medium text-gray-600 dark:text-white">
+                        Quality
+                      </label>
+                      <span className="text-xs md:text-sm bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">
+                        {quality}%
+                      </span>
+                    </div>
                     <input
-                      type="number"
+                      type="range"
                       min="1"
-                      placeholder="Auto"
-                      value={height}
-                      onChange={(e) => setHeight(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg p-2.5 md:p-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                      max="100"
+                      value={quality}
+                      onChange={(e) => setQuality(e.target.value)}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                     />
+                    <div className="flex justify-between text-xs text-gray-500 dark:text-white mt-1">
+                      <span>Small file</span>
+                      <span>High quality</span>
+                    </div>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-white mt-2">
-                  Leave empty to maintain original aspect ratio
-                </p>
+
+                {/* Dimensions */}
+                <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <h3 className="text-sm font-medium text-gray-600 dark:text-white mb-3">
+                    Dimensions (Optional)
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-gray-500 dark:text-white mb-1">
+                        Width (px)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="Auto"
+                        value={width}
+                        onChange={(e) => setWidth(e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg p-2.5 md:p-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 dark:text-white mb-1">
+                        Height (px)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="Auto"
+                        value={height}
+                        onChange={(e) => setHeight(e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg p-2.5 md:p-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-white mt-2">
+                    Leave empty to maintain original aspect ratio
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Selected Files Preview */}
         {files.length > 0 && (
@@ -645,38 +647,38 @@ export default function Home() {
         )}
 
         {/* Convert Button */}
-        <button
-          onClick={handleConvert}
-          disabled={files.length === 0 || isConverting}
-          className={`
+        {files.length > 0 && (
+          <button
+            onClick={handleConvert}
+            disabled={files.length === 0 || isConverting}
+            className={`
             w-full py-3 md:py-4 rounded-xl font-semibold text-base md:text-lg
             transition-all duration-200 active:scale-98 hover:scale-102
             flex items-center justify-center gap-2
             ${
               files.length > 0 && !isConverting
-                ? "bg-linear-to-r from-blue-600 to-purple-600 text-white hover:shadow-lg"
+                ? "bg-blue-600 text-white hover:shadow-lg"
                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
             }
           `}
-        >
-          {isConverting ? (
-            <>
+          >
+            {isConverting ? (
+              <>
                 <div className="w-5 h-5 md:w-6 md:h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Converting... {Math.round(convertProgress)}%</span>
+              </>
+            ) : (
+              <>
+                <ArrowDownTrayIcon className="w-4 h-4 md:w-5 md:h-5" />
                 <span>
-                  Converting... {Math.round(convertProgress)}%
+                  {files.length > 0
+                    ? `Convert ${files.length} ${files.length === 1 ? "Image" : "Images"}`
+                    : "Select Images"}
                 </span>
-            </>
-          ) : (
-            <>
-              <ArrowDownTrayIcon className="w-4 h-4 md:w-5 md:h-5" />
-              <span>
-                {files.length > 0
-                  ? `Convert ${files.length} ${files.length === 1 ? "Image" : "Images"}`
-                  : "Select Images"}
-              </span>
-            </>
-          )}
-        </button>
+              </>
+            )}
+          </button>
+        )}
 
         {/* Results */}
         {results.length > 0 && (

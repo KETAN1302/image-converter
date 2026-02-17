@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
               .avif({ quality: Math.min(quality, 100), effort: 4 })
               .toBuffer();
             break;
-        
+
           default:
             throw new Error(`Unsupported format: ${format}`);
         }

@@ -142,8 +142,8 @@ export default function PdfConverter() {
       <div className="sticky top-0 z-10 backdrop-blur-md border-b border-gray-200 px-4 py-4">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-            <DocumentTextIcon className="w-8 h-8 text-red-500" />
-            <span className="bg-linear-to-r from-red-600 to-blue-600 bg-clip-text text-transparent">
+            <DocumentTextIcon className="w-8 h-8 text-blue-500" />
+            <span className="bg-linear-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent">
               Image to PDF Converter
             </span>
           </h1>
@@ -166,8 +166,8 @@ export default function PdfConverter() {
             transition-all duration-300 cursor-pointer
             ${
               isDragging
-                ? "border-red-500 bg-red-50 scale-102 shadow-lg"
-                : "border-gray-300 dark:border-gray-700 hover:border-red-400 bg-white dark:bg-gray-900 hover:shadow-md"
+                ? "border-blue-500 bg-blue-50 scale-102 shadow-lg"
+                : "border-gray-300 dark:border-gray-700 hover:border-blue-400 bg-white dark:bg-gray-900 hover:shadow-md"
             }
           `}
         >
@@ -183,7 +183,7 @@ export default function PdfConverter() {
           <div className="text-center">
             <DocumentArrowUpIcon
               className={`w-16 h-16 mx-auto mb-4 transition-all duration-300 ${
-                isDragging ? "text-red-500 scale-110" : "text-gray-400"
+                isDragging ? "text-blue-500 scale-110" : "text-gray-400"
               }`}
             />
 
@@ -195,7 +195,7 @@ export default function PdfConverter() {
               or click to select files (JPG, PNG, WebP, GIF)
             </p>
 
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg text-sm">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">
               <PhotoIcon className="w-4 h-4" />
               Select Images
             </div>
@@ -265,126 +265,132 @@ export default function PdfConverter() {
         )}
 
         {/* PDF Options */}
-        <div className="mb-6 p-4 bg-white dark:bg-gray-900 rounded-xl shadow-sm border-2 border-red-100 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-700 dark:text-white flex items-center gap-2">
-              <Cog6ToothIcon className="w-5 h-5 text-red-500" />
-              PDF Settings
-            </h2>
+        {files.length > 0 && (
+          <div className="mb-6 p-4 bg-white dark:bg-gray-900 rounded-xl shadow-sm border-2 border-blue-100 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-gray-700 dark:text-white flex items-center gap-2">
+                <Cog6ToothIcon className="w-5 h-5 text-blue-500" />
+                PDF Settings
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
+                  Page Size
+                </label>
+                <select
+                  value={pageSize}
+                  onChange={(e) => setPageSize(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 rounded-lg p-2 text-sm"
+                >
+                  <option value="auto">Auto (match image size)</option>
+                  <option value="a4">A4</option>
+                  <option value="a5">A5</option>
+                  <option value="letter">Letter</option>
+                  <option value="legal">Legal</option>
+                  <option value="tabloid">Tabloid</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
+                  Orientation
+                </label>
+                <select
+                  value={orientation}
+                  onChange={(e) => setOrientation(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-gray-700 dark:text-white dark:bg-gray-800 rounded-lg p-2 text-sm"
+                >
+                  <option value="auto">Auto (follow image)</option>
+                  <option value="portrait">Portrait</option>
+                  <option value="landscape">Landscape</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
+                  Image Quality: {quality}%
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="100"
+                  value={quality}
+                  onChange={(e) => setQuality(e.target.value)}
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500 dark:text-white mt-1">
+                  Higher quality = larger file size
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
+                  Margin: {margin}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="25"
+                  value={margin}
+                  onChange={(e) => setMargin(e.target.value)}
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500 dark:text-white mt-1">
+                  Space around the image on the page
+                </p>
+              </div>
+            </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
-                Page Size
-              </label>
-              <select
-                value={pageSize}
-                onChange={(e) => setPageSize(e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 rounded-lg p-2 text-sm"
-              >
-                <option value="auto">Auto (match image size)</option>
-                <option value="a4">A4</option>
-                <option value="a5">A5</option>
-                <option value="letter">Letter</option>
-                <option value="legal">Legal</option>
-                <option value="tabloid">Tabloid</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
-                Orientation
-              </label>
-              <select
-                value={orientation}
-                onChange={(e) => setOrientation(e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-700 dark:text-white dark:bg-gray-800 rounded-lg p-2 text-sm"
-              >
-                <option value="auto">Auto (follow image)</option>
-                <option value="portrait">Portrait</option>
-                <option value="landscape">Landscape</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
-                Image Quality: {quality}%
-              </label>
-              <input
-                type="range"
-                min="1"
-                max="100"
-                value={quality}
-                onChange={(e) => setQuality(e.target.value)}
-                className="w-full"
-              />
-              <p className="text-xs text-gray-500 dark:text-white mt-1">
-                Higher quality = larger file size
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
-                Margin: {margin}%
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="25"
-                value={margin}
-                onChange={(e) => setMargin(e.target.value)}
-                className="w-full"
-              />
-              <p className="text-xs text-gray-500 dark:text-white mt-1">
-                Space around the image on the page
-              </p>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Convert Button */}
-        <button
-          onClick={handleConvert}
-          disabled={files.length === 0 || isConverting}
-          className={`
-            w-full py-4 rounded-xl font-semibold text-lg
-            transition-all duration-200 flex items-center justify-center gap-2
-            ${
-              files.length > 0 && !isConverting
-                ? "bg-linear-to-r from-red-600 to-blue-600 text-white hover:shadow-lg"
-                : "bg-gray-300 dark:bg-gray-800 text-gray-500 cursor-not-allowed"
-            }
-          `}
-        >
-          {isConverting ? (
-            <>
-              <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" />
-              <span>Converting... {progress}%</span>
-            </>
-          ) : (
-            <>
-              <DocumentTextIcon className="w-5 h-5" />
-              <span>Create PDF ({files.length} images)</span>
-            </>
-          )}
-        </button>
+        {files.length > 0 && (
+          <>
+            <button
+              onClick={handleConvert}
+              disabled={isConverting}
+              className={`
+                w-full py-4 rounded-xl font-semibold text-lg
+                transition-all duration-200 flex items-center justify-center gap-2
+                ${
+                  !isConverting
+                    ? "bg-linear-to-r from-blue-600 to-blue-600 text-white hover:shadow-lg"
+                    : "bg-gray-300 dark:bg-gray-800 text-gray-500 cursor-not-allowed"
+                }
+              `}
+            >
+              {isConverting ? (
+                <>
+                  <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Converting... {progress}%</span>
+                </>
+              ) : (
+                <>
+                  <DocumentTextIcon className="w-5 h-5" />
+                  <span>Create PDF ({files.length} images)</span>
+                </>
+              )}
+            </button>
 
-        {/* Progress Bar */}
-        {isConverting && (
-          <div className="mt-4">
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-linear-to-r from-red-500 to-blue-500 transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <p className="text-xs text-center text-gray-500 mt-2">
-              Processing images... {Math.min(progress, 100)}%
-            </p>
-          </div>
+            {/* Progress Bar */}
+            {isConverting && (
+              <div className="mt-4">
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-linear-to-r from-blue-500 to-blue-500 transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-center text-gray-500 mt-2">
+                  Processing images... {Math.min(progress, 100)}%
+                </p>
+              </div>
+            )}
+          </>
         )}
 
         {/* Result */}
@@ -395,7 +401,9 @@ export default function PdfConverter() {
                 <DocumentTextIcon className="w-8 h-8 text-green-600" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-gray-700 dark:text-white">{result.name}</h3>
+                <h3 className="font-semibold text-gray-700 dark:text-white">
+                  {result.name}
+                </h3>
                 <p className="text-sm text-gray-500 dark:text-white">
                   {result.pageCount} pages • {formatFileSize(result.size)}
                 </p>

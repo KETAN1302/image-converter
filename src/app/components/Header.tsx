@@ -11,7 +11,9 @@ export default function Header() {
         {/* Logo Section */}
         <div className="flex items-center gap-2">
           <PhotoIcon className="w-6 h-6 text-blue-600" />
-          <span className="font-semibold text-gray-900 dark:text-white">ImageConverter</span>
+          <span className="font-semibold text-gray-900 dark:text-white">
+            ImageConverter
+          </span>
         </div>
 
         {/* Navigation Links */}
@@ -39,4 +41,3 @@ export default function Header() {
     </header>
   );
 }
-
