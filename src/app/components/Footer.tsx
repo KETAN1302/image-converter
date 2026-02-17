@@ -15,7 +15,7 @@ export default function Footer() {
         {/* Footer Links */}
         <div className="flex gap-4">
           <Link
-            href="/coverter"
+            href="/converter"
             className="text-xs text-gray-500 dark:text-white hover:text-blue-600 transition-colors"
           >
             Image Converter
@@ -25,12 +25,6 @@ export default function Footer() {
             className="text-xs text-gray-500 dark:text-white hover:text-green-600 transition-colors"
           >
             Image to PDF
-          </Link>
-          <Link
-            href="/pdf-to-image"
-            className="text-xs text-gray-500 dark:text-white hover:text-purple-600 transition-colors"
-          >
-            PDF to Image
           </Link>
         </div>
       </div>

@@ -19,7 +19,7 @@ export default function WhyChoose() {
             </div>
             <h3 className="font-medium text-gray-900 dark:text-white mb-1">Multiple Formats</h3>
             <p className="text-sm text-gray-500 dark:text-white">
-              PNG, JPG, WebP, AVIF, GIF, PDF
+              PNG, JPG, JPEG, WebP, AVIF, PDF
             </p>
           </div>
 

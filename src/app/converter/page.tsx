@@ -18,11 +18,13 @@ interface ConvertedFile {
   size: number;
   width?: number;
   height?: number;
+  preview?: string;
 }
 
 interface ApiFile {
   name: string;
   data: string;
+  preview?: string;
 }
 
 type DirectoryInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
@@ -38,6 +40,7 @@ export default function Home() {
   const [quality, setQuality] = useState("80");
   const [results, setResults] = useState<ConvertedFile[]>([]);
   const [isConverting, setIsConverting] = useState(false);
+  const [convertProgress, setConvertProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{
     [key: string]: number;
@@ -47,6 +50,7 @@ export default function Home() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
+  const convertIntervalRef = useRef<number | null>(null);
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -58,6 +62,15 @@ export default function Home() {
     window.addEventListener("resize", checkMobile);
 
     return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Clear convert progress interval on unmount
+  useEffect(() => {
+    return () => {
+      if (convertIntervalRef.current) {
+        clearInterval(convertIntervalRef.current);
+      }
+    };
   }, []);
 
   const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
@@ -230,6 +243,26 @@ export default function Home() {
     formData.append("quality", quality);
 
     try {
+      // start simulated conversion progress
+      setConvertProgress(0);
+      const tickMs = 200;
+      // Estimate duration: base + per-file, give TIFF more time
+      const base = 2000;
+      const perFile = format === "tiff" ? 1500 : 700;
+      const estimated = Math.max(2000, base + files.length * perFile);
+      const steps = Math.max(1, Math.floor(estimated / tickMs));
+      const increment = 100 / steps;
+
+      if (convertIntervalRef.current) {
+        clearInterval(convertIntervalRef.current);
+      }
+      convertIntervalRef.current = window.setInterval(() => {
+        setConvertProgress((p) => {
+          const next = Math.min(99, p + increment);
+          return next;
+        });
+      }, tickMs);
+
       const res = await fetch("/API/convert", {
         method: "POST",
         body: formData,
@@ -276,6 +309,12 @@ export default function Home() {
           : "Conversion failed. Please try again.";
       setError(message);
     } finally {
+      // finalize progress
+      if (convertIntervalRef.current) {
+        clearInterval(convertIntervalRef.current);
+        convertIntervalRef.current = null;
+      }
+      setConvertProgress(100);
       setIsConverting(false);
     }
   };
@@ -445,6 +484,7 @@ export default function Home() {
                   >
                     <option value="png">PNG - Lossless</option>
                     <option value="jpg">JPG - Best for photos</option>
+                    <option value="jpeg">JPEG - Best for photos</option>
                     <option value="webp">WebP - Modern format</option>
                     <option value="avif">AVIF - High compression</option>
                   </select>
@@ -621,8 +661,10 @@ export default function Home() {
         >
           {isConverting ? (
             <>
-              <div className="w-5 h-5 md:w-6 md:h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
-              <span>Converting...</span>
+                <div className="w-5 h-5 md:w-6 md:h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                <span>
+                  Converting... {Math.round(convertProgress)}%
+                </span>
             </>
           ) : (
             <>
@@ -660,18 +702,18 @@ export default function Home() {
                     {/* Image Container */}
                     <div className="aspect-video bg-gray-100 relative group">
                       <NextImage
-                        src={file.data}
+                        src={file.preview || file.data}
                         alt={file.name}
                         fill
                         unoptimized
-                        className="object-contain"
+                        className="object-fill"
                       />
 
                       {/* Download Overlay */}
                       <a
                         href={file.data}
                         download={file.name}
-                        className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center group"
+                        className="absolute inset-0 bg-black/20 bg-opacity-0 hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center group"
                       >
                         <div className="bg-white rounded-full p-3 opacity-0 group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all duration-200 shadow-lg">
                           <ArrowDownTrayIcon className="w-5 h-5 text-gray-700" />

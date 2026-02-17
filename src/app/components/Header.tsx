@@ -17,13 +17,13 @@ export default function Header() {
         {/* Navigation Links */}
         <div className="flex items-center gap-4">
           <Link
-            href="/coverter"
-            className="text-sm text-gray-60 dark:text-white hover:text-blue-600 transition-colors"
+            href="/converter"
+            className="text-sm text-gray-600 dark:text-white hover:text-blue-600 transition-colors"
           >
             Image Tools
           </Link>
           <Link
-            href="/pdf-to-image"
+            href="/image-to-pdf"
             className="text-sm text-gray-600 dark:text-white hover:text-blue-600 transition-colors"
           >
             PDF Tools

@@ -36,7 +36,7 @@ export default function HeroSection() {
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <Link
-          href="/coverter"
+          href="/converter"
           className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
         >
           <PhotoIcon className="w-4 h-4" />
@@ -50,14 +50,6 @@ export default function HeroSection() {
         >
           <DocumentTextIcon className="w-4 h-4" />
           Image to PDF
-        </Link>
-
-        <Link
-          href="/pdf-to-image"
-          className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
-        >
-          <DocumentArrowUpIcon className="w-4 h-4" />
-          PDF to Image
         </Link>
       </div>
     </section>

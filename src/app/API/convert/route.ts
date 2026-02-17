@@ -10,6 +10,8 @@ export const runtime = "nodejs"; // Use Node.js runtime (required for sharp)
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
 // Maximum number of files
 const MAX_FILES = 20;
+// Concurrency for processing files (adjust for CPU availability)
+const CONCURRENCY = 3;
 
 export async function POST(req: NextRequest) {
   try {
@@ -73,9 +75,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const results: { name: string; data: string }[] = [];
+    const results: { name: string; data: string; preview?: string }[] = [];
 
-    for (const file of files) {
+    // Helper to process a single file and return result or null
+    const processFile = async (file: File) => {
       try {
         const buffer = Buffer.from(await file.arrayBuffer());
 
@@ -89,69 +92,65 @@ export async function POST(req: NextRequest) {
 
         if (width || height) {
           image = image.resize(width, height, {
-            fit: "inside", // Maintain aspect ratio
-            withoutEnlargement: true, // Don't enlarge images smaller than target
+            fit: "inside",
+            withoutEnlargement: true,
           });
         }
 
         let output: Buffer;
+        const fmt = format.toLowerCase();
 
-        // Handle format conversion
-        switch (format.toLowerCase()) {
+        // Handle format conversion with tuned TIFF options
+        switch (fmt) {
           case "png":
-            output = await image
-              .png({
-                compressionLevel: 9, // PNG quality is 0-100
-              })
-              .toBuffer();
+            output = await image.png({ compressionLevel: 9 }).toBuffer();
             break;
           case "jpg":
           case "jpeg":
             output = await image
-              .jpeg({
-                quality: Math.min(quality, 100), // JPEG quality is 0-100
-              })
+              .jpeg({ quality: Math.min(quality, 100) })
               .toBuffer();
             break;
           case "webp":
             output = await image
-              .webp({
-                quality: Math.min(quality, 100), // WebP quality is 0-100
-              })
+              .webp({ quality: Math.min(quality, 100) })
               .toBuffer();
             break;
           case "avif":
             output = await image
-              .avif({
-                quality: Math.min(quality, 100), // AVIF quality is 0-100
-                effort: 4,
-              })
+              .avif({ quality: Math.min(quality, 100), effort: 4 })
               .toBuffer();
             break;
-
+        
           default:
-            return NextResponse.json(
-              { error: `Unsupported format: ${format}` },
-              { status: 400 },
-            );
+            throw new Error(`Unsupported format: ${format}`);
         }
 
-        // Generate filename with proper extension
+        // Generate filename with proper extension and normalized mime type
         const originalName =
           file.name.split(".").slice(0, -1).join(".") || "image";
-        const extension = format === "jpeg" ? "jpg" : format;
+        const mime = fmt === "jpg" || fmt === "jpeg" ? "jpeg" : fmt;
+        const extension = mime === "jpeg" ? "jpg" : mime;
         const fileName = `${originalName}.${extension}`;
 
         const base64 = output.toString("base64");
 
-        results.push({
+        return {
           name: fileName,
-          data: `data:image/${format === "jpeg" ? "jpeg" : format};base64,${base64}`,
-        });
+          data: `data:image/${mime};base64,${base64}`,
+        } as { name: string; data: string; preview?: string };
       } catch (fileError) {
         console.error(`Error processing file ${file.name}:`, fileError);
-        // Continue with other files instead of failing completely
-        continue;
+        return null;
+      }
+    };
+
+    // Process files in small batches to limit CPU/memory usage
+    for (let i = 0; i < files.length; i += CONCURRENCY) {
+      const batch = files.slice(i, i + CONCURRENCY);
+      const batchResults = await Promise.all(batch.map((f) => processFile(f)));
+      for (const r of batchResults) {
+        if (r) results.push(r);
       }
     }
 
@@ -184,6 +183,6 @@ export async function GET() {
     version: "1.0",
     maxFileSize: "50MB",
     maxFiles: 20,
-    supportedFormats: ["png", "jpg", "jpeg", "webp", "avif", "tiff"],
+    supportedFormats: ["png", "jpg", "jpeg", "webp", "avif"],
   });
 }
