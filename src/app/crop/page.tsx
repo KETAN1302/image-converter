@@ -144,7 +144,7 @@ export default function CropImage() {
   const getHandleAtPosition = (
     x: number,
     y: number,
-    threshold?: number
+    threshold?: number,
   ): string | null => {
     const touchThreshold = isMobile ? 15 : 10;
     const finalThreshold = threshold || touchThreshold;
@@ -183,7 +183,11 @@ export default function CropImage() {
     }
 
     // Check edges
-    if (Math.abs(x - cropX) < finalThreshold && y > cropY && y < cropY + cropH) {
+    if (
+      Math.abs(x - cropX) < finalThreshold &&
+      y > cropY &&
+      y < cropY + cropH
+    ) {
       return "w-resize";
     }
     if (
@@ -193,7 +197,11 @@ export default function CropImage() {
     ) {
       return "e-resize";
     }
-    if (Math.abs(y - cropY) < finalThreshold && x > cropX && x < cropX + cropW) {
+    if (
+      Math.abs(y - cropY) < finalThreshold &&
+      x > cropX &&
+      x < cropX + cropW
+    ) {
       return "n-resize";
     }
     if (
@@ -205,12 +213,7 @@ export default function CropImage() {
     }
 
     // Check if inside crop area (for moving)
-    if (
-      x > cropX &&
-      x < cropX + cropW &&
-      y > cropY &&
-      y < cropY + cropH
-    ) {
+    if (x > cropX && x < cropX + cropW && y > cropY && y < cropY + cropH) {
       return "move";
     }
 
@@ -251,69 +254,78 @@ export default function CropImage() {
     let newCoords = { ...cropCoords };
 
     if (dragHandle === "move") {
-      newCoords.x = Math.max(0, Math.min(cropCoords.x + deltaX, imgDimensions.width - cropCoords.width));
-      newCoords.y = Math.max(0, Math.min(cropCoords.y + deltaY, imgDimensions.height - cropCoords.height));
+      newCoords.x = Math.max(
+        0,
+        Math.min(cropCoords.x + deltaX, imgDimensions.width - cropCoords.width),
+      );
+      newCoords.y = Math.max(
+        0,
+        Math.min(
+          cropCoords.y + deltaY,
+          imgDimensions.height - cropCoords.height,
+        ),
+      );
     } else if (dragHandle === "nw-resize") {
       newCoords.x = Math.max(0, cropCoords.x + deltaX);
       newCoords.y = Math.max(0, cropCoords.y + deltaY);
       newCoords.width = Math.min(
         Math.max(50, cropCoords.width - deltaX),
-        imgDimensions.width - newCoords.x
+        imgDimensions.width - newCoords.x,
       );
       newCoords.height = Math.min(
         Math.max(50, cropCoords.height - deltaY),
-        imgDimensions.height - newCoords.y
+        imgDimensions.height - newCoords.y,
       );
     } else if (dragHandle === "ne-resize") {
       newCoords.y = Math.max(0, cropCoords.y + deltaY);
       newCoords.width = Math.min(
         Math.max(50, cropCoords.width + deltaX),
-        imgDimensions.width - cropCoords.x
+        imgDimensions.width - cropCoords.x,
       );
       newCoords.height = Math.min(
         Math.max(50, cropCoords.height - deltaY),
-        imgDimensions.height - newCoords.y
+        imgDimensions.height - newCoords.y,
       );
     } else if (dragHandle === "sw-resize") {
       newCoords.x = Math.max(0, cropCoords.x + deltaX);
       newCoords.width = Math.min(
         Math.max(50, cropCoords.width - deltaX),
-        imgDimensions.width - newCoords.x
+        imgDimensions.width - newCoords.x,
       );
       newCoords.height = Math.min(
         Math.max(50, cropCoords.height + deltaY),
-        imgDimensions.height - cropCoords.y
+        imgDimensions.height - cropCoords.y,
       );
     } else if (dragHandle === "se-resize") {
       newCoords.width = Math.min(
         Math.max(50, cropCoords.width + deltaX),
-        imgDimensions.width - cropCoords.x
+        imgDimensions.width - cropCoords.x,
       );
       newCoords.height = Math.min(
         Math.max(50, cropCoords.height + deltaY),
-        imgDimensions.height - cropCoords.y
+        imgDimensions.height - cropCoords.y,
       );
     } else if (dragHandle === "n-resize") {
       newCoords.y = Math.max(0, cropCoords.y + deltaY);
       newCoords.height = Math.min(
         Math.max(50, cropCoords.height - deltaY),
-        imgDimensions.height - newCoords.y
+        imgDimensions.height - newCoords.y,
       );
     } else if (dragHandle === "s-resize") {
       newCoords.height = Math.min(
         Math.max(50, cropCoords.height + deltaY),
-        imgDimensions.height - cropCoords.y
+        imgDimensions.height - cropCoords.y,
       );
     } else if (dragHandle === "w-resize") {
       newCoords.x = Math.max(0, cropCoords.x + deltaX);
       newCoords.width = Math.min(
         Math.max(50, cropCoords.width - deltaX),
-        imgDimensions.width - newCoords.x
+        imgDimensions.width - newCoords.x,
       );
     } else if (dragHandle === "e-resize") {
       newCoords.width = Math.min(
         Math.max(50, cropCoords.width + deltaX),
-        imgDimensions.width - cropCoords.x
+        imgDimensions.width - cropCoords.x,
       );
     }
 
@@ -624,23 +636,19 @@ export default function CropImage() {
                           <rect width="100%" height="100%" fill="white" />
                           <rect
                             x={
-                              (cropCoords.x /
-                                imgDimensions.width) *
+                              (cropCoords.x / imgDimensions.width) *
                               (imgRef.current?.width || 0)
                             }
                             y={
-                              (cropCoords.y /
-                                imgDimensions.height) *
+                              (cropCoords.y / imgDimensions.height) *
                               (imgRef.current?.height || 0)
                             }
                             width={
-                              (cropCoords.width /
-                                imgDimensions.width) *
+                              (cropCoords.width / imgDimensions.width) *
                               (imgRef.current?.width || 0)
                             }
                             height={
-                              (cropCoords.height /
-                                imgDimensions.height) *
+                              (cropCoords.height / imgDimensions.height) *
                               (imgRef.current?.height || 0)
                             }
                             fill="black"
@@ -659,23 +667,19 @@ export default function CropImage() {
                       {/* Crop box border */}
                       <rect
                         x={
-                          (cropCoords.x /
-                            imgDimensions.width) *
+                          (cropCoords.x / imgDimensions.width) *
                           (imgRef.current?.width || 0)
                         }
                         y={
-                          (cropCoords.y /
-                            imgDimensions.height) *
+                          (cropCoords.y / imgDimensions.height) *
                           (imgRef.current?.height || 0)
                         }
                         width={
-                          (cropCoords.width /
-                            imgDimensions.width) *
+                          (cropCoords.width / imgDimensions.width) *
                           (imgRef.current?.width || 0)
                         }
                         height={
-                          (cropCoords.height /
-                            imgDimensions.height) *
+                          (cropCoords.height / imgDimensions.height) *
                           (imgRef.current?.height || 0)
                         }
                         fill="none"
@@ -685,140 +689,108 @@ export default function CropImage() {
                       />
 
                       {/* Grid lines */}
-                      <g
-                        stroke="#3b82f6"
-                        strokeWidth="1"
-                        opacity="0.3"
-                      >
+                      <g stroke="#3b82f6" strokeWidth="1" opacity="0.3">
                         <line
                           x1={
-                            (cropCoords.x /
-                              imgDimensions.width) *
+                            (cropCoords.x / imgDimensions.width) *
                               (imgRef.current?.width || 0) +
-                            ((cropCoords.width /
-                              imgDimensions.width) *
+                            ((cropCoords.width / imgDimensions.width) *
                               (imgRef.current?.width || 0)) /
                               3
                           }
                           y1={
-                            (cropCoords.y /
-                              imgDimensions.height) *
+                            (cropCoords.y / imgDimensions.height) *
                             (imgRef.current?.height || 0)
                           }
                           x2={
-                            (cropCoords.x /
-                              imgDimensions.width) *
+                            (cropCoords.x / imgDimensions.width) *
                               (imgRef.current?.width || 0) +
-                            ((cropCoords.width /
-                              imgDimensions.width) *
+                            ((cropCoords.width / imgDimensions.width) *
                               (imgRef.current?.width || 0)) /
                               3
                           }
                           y2={
-                            (cropCoords.y /
-                              imgDimensions.height) *
+                            (cropCoords.y / imgDimensions.height) *
                               (imgRef.current?.height || 0) +
-                            (cropCoords.height /
-                              imgDimensions.height) *
+                            (cropCoords.height / imgDimensions.height) *
                               (imgRef.current?.height || 0)
                           }
                         />
                         <line
                           x1={
-                            (cropCoords.x /
-                              imgDimensions.width) *
+                            (cropCoords.x / imgDimensions.width) *
                               (imgRef.current?.width || 0) +
-                            ((cropCoords.width /
-                              imgDimensions.width) *
-                              (imgRef.current?.width || 0)) *
+                            (cropCoords.width / imgDimensions.width) *
+                              (imgRef.current?.width || 0) *
                               (2 / 3)
                           }
                           y1={
-                            (cropCoords.y /
-                              imgDimensions.height) *
+                            (cropCoords.y / imgDimensions.height) *
                             (imgRef.current?.height || 0)
                           }
                           x2={
-                            (cropCoords.x /
-                              imgDimensions.width) *
+                            (cropCoords.x / imgDimensions.width) *
                               (imgRef.current?.width || 0) +
-                            ((cropCoords.width /
-                              imgDimensions.width) *
-                              (imgRef.current?.width || 0)) *
+                            (cropCoords.width / imgDimensions.width) *
+                              (imgRef.current?.width || 0) *
                               (2 / 3)
                           }
                           y2={
-                            (cropCoords.y /
-                              imgDimensions.height) *
+                            (cropCoords.y / imgDimensions.height) *
                               (imgRef.current?.height || 0) +
-                            (cropCoords.height /
-                              imgDimensions.height) *
+                            (cropCoords.height / imgDimensions.height) *
                               (imgRef.current?.height || 0)
                           }
                         />
                         <line
                           x1={
-                            (cropCoords.x /
-                              imgDimensions.width) *
+                            (cropCoords.x / imgDimensions.width) *
                             (imgRef.current?.width || 0)
                           }
                           y1={
-                            (cropCoords.y /
-                              imgDimensions.height) *
+                            (cropCoords.y / imgDimensions.height) *
                               (imgRef.current?.height || 0) +
-                            ((cropCoords.height /
-                              imgDimensions.height) *
+                            ((cropCoords.height / imgDimensions.height) *
                               (imgRef.current?.height || 0)) /
                               3
                           }
                           x2={
-                            (cropCoords.x /
-                              imgDimensions.width) *
+                            (cropCoords.x / imgDimensions.width) *
                               (imgRef.current?.width || 0) +
-                            (cropCoords.width /
-                              imgDimensions.width) *
+                            (cropCoords.width / imgDimensions.width) *
                               (imgRef.current?.width || 0)
                           }
                           y2={
-                            (cropCoords.y /
-                              imgDimensions.height) *
+                            (cropCoords.y / imgDimensions.height) *
                               (imgRef.current?.height || 0) +
-                            ((cropCoords.height /
-                              imgDimensions.height) *
+                            ((cropCoords.height / imgDimensions.height) *
                               (imgRef.current?.height || 0)) /
                               3
                           }
                         />
                         <line
                           x1={
-                            (cropCoords.x /
-                              imgDimensions.width) *
+                            (cropCoords.x / imgDimensions.width) *
                             (imgRef.current?.width || 0)
                           }
                           y1={
-                            (cropCoords.y /
-                              imgDimensions.height) *
+                            (cropCoords.y / imgDimensions.height) *
                               (imgRef.current?.height || 0) +
-                            ((cropCoords.height /
-                              imgDimensions.height) *
-                              (imgRef.current?.height || 0)) *
+                            (cropCoords.height / imgDimensions.height) *
+                              (imgRef.current?.height || 0) *
                               (2 / 3)
                           }
                           x2={
-                            (cropCoords.x /
-                              imgDimensions.width) *
+                            (cropCoords.x / imgDimensions.width) *
                               (imgRef.current?.width || 0) +
-                            (cropCoords.width /
-                              imgDimensions.width) *
+                            (cropCoords.width / imgDimensions.width) *
                               (imgRef.current?.width || 0)
                           }
                           y2={
-                            (cropCoords.y /
-                              imgDimensions.height) *
+                            (cropCoords.y / imgDimensions.height) *
                               (imgRef.current?.height || 0) +
-                            ((cropCoords.height /
-                              imgDimensions.height) *
-                              (imgRef.current?.height || 0)) *
+                            (cropCoords.height / imgDimensions.height) *
+                              (imgRef.current?.height || 0) *
                               (2 / 3)
                           }
                         />
@@ -827,13 +799,11 @@ export default function CropImage() {
                       {/* Corner handles */}
                       <circle
                         cx={
-                          (cropCoords.x /
-                            imgDimensions.width) *
+                          (cropCoords.x / imgDimensions.width) *
                           (imgRef.current?.width || 0)
                         }
                         cy={
-                          (cropCoords.y /
-                            imgDimensions.height) *
+                          (cropCoords.y / imgDimensions.height) *
                           (imgRef.current?.height || 0)
                         }
                         r={isMobile ? "10" : "6"}
@@ -845,16 +815,13 @@ export default function CropImage() {
                       />
                       <circle
                         cx={
-                          (cropCoords.x /
-                            imgDimensions.width) *
+                          (cropCoords.x / imgDimensions.width) *
                             (imgRef.current?.width || 0) +
-                          (cropCoords.width /
-                            imgDimensions.width) *
+                          (cropCoords.width / imgDimensions.width) *
                             (imgRef.current?.width || 0)
                         }
                         cy={
-                          (cropCoords.y /
-                            imgDimensions.height) *
+                          (cropCoords.y / imgDimensions.height) *
                           (imgRef.current?.height || 0)
                         }
                         r={isMobile ? "10" : "6"}
@@ -866,16 +833,13 @@ export default function CropImage() {
                       />
                       <circle
                         cx={
-                          (cropCoords.x /
-                            imgDimensions.width) *
+                          (cropCoords.x / imgDimensions.width) *
                           (imgRef.current?.width || 0)
                         }
                         cy={
-                          (cropCoords.y /
-                            imgDimensions.height) *
+                          (cropCoords.y / imgDimensions.height) *
                             (imgRef.current?.height || 0) +
-                          (cropCoords.height /
-                            imgDimensions.height) *
+                          (cropCoords.height / imgDimensions.height) *
                             (imgRef.current?.height || 0)
                         }
                         r={isMobile ? "10" : "6"}
@@ -887,19 +851,15 @@ export default function CropImage() {
                       />
                       <circle
                         cx={
-                          (cropCoords.x /
-                            imgDimensions.width) *
+                          (cropCoords.x / imgDimensions.width) *
                             (imgRef.current?.width || 0) +
-                          (cropCoords.width /
-                            imgDimensions.width) *
+                          (cropCoords.width / imgDimensions.width) *
                             (imgRef.current?.width || 0)
                         }
                         cy={
-                          (cropCoords.y /
-                            imgDimensions.height) *
+                          (cropCoords.y / imgDimensions.height) *
                             (imgRef.current?.height || 0) +
-                          (cropCoords.height /
-                            imgDimensions.height) *
+                          (cropCoords.height / imgDimensions.height) *
                             (imgRef.current?.height || 0)
                         }
                         r={isMobile ? "10" : "6"}
