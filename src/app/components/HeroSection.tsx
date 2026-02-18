@@ -24,6 +24,12 @@ export default function HeroSection() {
       description: "Convert between image formats",
     },
     {
+      href: "/image-to-ico",
+      icon: PhotoIcon,
+      label: "Image to ICO",
+      description: "Convert images to ICO",      
+    },
+    {
       href: "/image-to-pdf",
       icon: DocumentTextIcon,
       label: "Image to PDF",

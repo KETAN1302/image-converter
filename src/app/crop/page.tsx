@@ -455,7 +455,7 @@ export default function CropImage() {
       <div className="max-w-4xl mx-auto px-4 py-4 md:py-8">
         {/* Error Display */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3">
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded flex items-start gap-3">
             <div className="flex-1">
               <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
               <button
@@ -476,7 +476,7 @@ export default function CropImage() {
             onDragOver={(e) => e.preventDefault()}
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
-            className={`relative w-full p-6 md:p-8 border-3 border-dashed rounded-xl md:rounded-2xl transition-all duration-300 cursor-pointer ${
+            className={`relative w-full p-6 md:p-8 border-3 border-dashed rounded transition-all duration-300 cursor-pointer ${
               isDragging
                 ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-102 shadow-lg"
                 : "border-gray-300 dark:border-gray-700 hover:border-gray-400 bg-white dark:bg-gray-900 hover:shadow-md"
@@ -502,7 +502,7 @@ export default function CropImage() {
               {/* Upload Button */}
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-md"
               >
                 <svg
                   className="w-5 h-5"
@@ -533,7 +533,7 @@ export default function CropImage() {
 
         {/* File Preview & Options */}
         {file && (
-          <div className="mb-6 p-4 md:p-6 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="mb-6 p-4 md:p-6 bg-white dark:bg-gray-900 rounded shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base md:text-lg font-semibold text-gray-700 dark:text-white flex items-center gap-2">
                 <span className="w-1 h-5 md:h-6 bg-blue-600 rounded-full"></span>
@@ -549,8 +549,8 @@ export default function CropImage() {
 
             {/* File Info */}
             <div className="mb-6">
-              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700">
+              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded">
+                <div className="w-16 h-16 rounded overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700">
                   {preview && (
                     <Image
                       src={preview}
@@ -600,7 +600,7 @@ export default function CropImage() {
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
-                className="border-2 border-gray-300 dark:border-gray-600 rounded-lg flex justify-center items-center bg-gray-50 dark:bg-gray-800 p-2 md:p-3 relative select-none touch-none"
+                className="border-2 border-gray-300 dark:border-gray-600 rounded flex justify-center items-center bg-gray-50 dark:bg-gray-800 p-2 md:p-3 relative select-none touch-none"
                 style={{
                   maxHeight: isMobile ? "250px" : "300px",
                   height: "auto",
@@ -891,7 +891,7 @@ export default function CropImage() {
                     onChange={(e) =>
                       handleCropChange("x", parseInt(e.target.value))
                     }
-                    className="w-full px-2 py-2 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 py-2 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
@@ -904,7 +904,7 @@ export default function CropImage() {
                     onChange={(e) =>
                       handleCropChange("y", parseInt(e.target.value))
                     }
-                    className="w-full px-2 py-2 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 py-2 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
@@ -917,7 +917,7 @@ export default function CropImage() {
                     onChange={(e) =>
                       handleCropChange("width", parseInt(e.target.value))
                     }
-                    className="w-full px-2 py-2 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 py-2 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
@@ -930,7 +930,7 @@ export default function CropImage() {
                     onChange={(e) =>
                       handleCropChange("height", parseInt(e.target.value))
                     }
-                    className="w-full px-2 py-2 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 py-2 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -940,7 +940,7 @@ export default function CropImage() {
             <button
               onClick={cropImage}
               disabled={loading}
-              className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+              className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded transition-colors flex items-center justify-center gap-2"
             >
               <ScissorsIcon className="w-6 h-6" />
               {loading ? "Processing..." : "Crop Image"}
@@ -950,15 +950,15 @@ export default function CropImage() {
 
         {/* Results Section */}
         {result && (
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6">
+          <div className="bg-white dark:bg-gray-900 rounded shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6">
             <h2 className="text-base md:text-lg font-semibold text-gray-700 dark:text-white flex items-center gap-2 mb-4">
               <span className="w-1 h-5 md:h-6 bg-green-600 rounded-full"></span>
               Cropped Image
             </h2>
 
             <div className="mb-4">
-              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700">
+              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded">
+                <div className="w-16 h-16 rounded overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700">
                   {(result.preview || result.data) && (
                     <Image
                       src={result.preview || result.data}
@@ -983,14 +983,14 @@ export default function CropImage() {
             <div className="flex gap-3">
               <button
                 onClick={downloadImage}
-                className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded transition-colors flex items-center justify-center gap-2"
               >
                 <ArrowDownTrayIcon className="w-5 h-5" />
                 Download
               </button>
               <button
                 onClick={clearAll}
-                className="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-white font-semibold rounded-lg transition-colors"
+                className="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-white font-semibold rounded transition-colors"
               >
                 Crop Another
               </button>

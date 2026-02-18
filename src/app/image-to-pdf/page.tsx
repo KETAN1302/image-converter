@@ -161,7 +161,7 @@ export default function PdfConverter() {
           onDragLeave={handleDragLeave}
           onClick={() => fileInputRef.current?.click()}
           className={`
-            relative w-full p-8 mb-6 border-3 border-dashed rounded-xl
+            relative w-full p-8 mb-6 border-3 border-dashed rounded
             transition-all duration-300 cursor-pointer
             ${
               isDragging
@@ -194,7 +194,7 @@ export default function PdfConverter() {
               or click to select files (JPG, PNG, WebP, GIF)
             </p>
 
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded text-sm">
               <PhotoIcon className="w-4 h-4" />
               Select Images
             </div>
@@ -203,7 +203,7 @@ export default function PdfConverter() {
 
         {/* Error Display */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded flex items-start gap-3">
             <ExclamationCircleIcon className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm text-red-700">{error}</p>
@@ -219,7 +219,7 @@ export default function PdfConverter() {
 
         {/* Selected Files */}
         {files.length > 0 && (
-          <div className="mb-6 p-4 bg-white dark:bg-gray-900 rounded-xl shadow-sm">
+          <div className="mb-6 p-4 bg-white dark:bg-gray-900 rounded shadow-sm">
             <div className="flex justify-between items-center mb-3">
               <h2 className="font-semibold text-gray-700 dark:text-white">
                 Selected Images ({files.length})
@@ -236,7 +236,7 @@ export default function PdfConverter() {
               {files.map((file, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                  className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-800 rounded"
                 >
                   <div className="w-10 h-10 rounded bg-gray-200 overflow-hidden shrink-0">
                     <img
@@ -265,7 +265,7 @@ export default function PdfConverter() {
 
         {/* PDF Options */}
         {files.length > 0 && (
-          <div className="mb-6 p-4 bg-white dark:bg-gray-900 rounded-xl shadow-sm border-2 border-blue-100 dark:border-gray-700">
+          <div className="mb-6 p-4 bg-white dark:bg-gray-900 rounded shadow-sm border-2 border-blue-100 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-gray-700 dark:text-white flex items-center gap-2">
                 <Cog6ToothIcon className="w-5 h-5 text-blue-500" />
@@ -281,7 +281,7 @@ export default function PdfConverter() {
                 <select
                   value={pageSize}
                   onChange={(e) => setPageSize(e.target.value)}
-                  className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 rounded-lg p-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 rounded p-2 text-sm"
                 >
                   <option value="auto">Auto (match image size)</option>
                   <option value="a4">A4</option>
@@ -299,7 +299,7 @@ export default function PdfConverter() {
                 <select
                   value={orientation}
                   onChange={(e) => setOrientation(e.target.value)}
-                  className="w-full border border-gray-300 dark:border-gray-700 dark:text-white dark:bg-gray-800 rounded-lg p-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-700 dark:text-white dark:bg-gray-800 rounded p-2 text-sm"
                 >
                   <option value="auto">Auto (follow image)</option>
                   <option value="portrait">Portrait</option>
@@ -353,7 +353,7 @@ export default function PdfConverter() {
               onClick={handleConvert}
               disabled={isConverting}
               className={`
-                w-full py-4 rounded-xl font-semibold text-lg
+                w-full py-3 rounded font-semibold text-lg
                 transition-all duration-200 flex items-center justify-center gap-2
                 ${
                   !isConverting
@@ -394,9 +394,9 @@ export default function PdfConverter() {
 
         {/* Result */}
         {result && (
-          <div className="mt-8 p-6 bg-white dark:bg-gray-900 rounded-xl shadow-sm border-2 border-green-100 dark:border-gray-700">
+          <div className="mt-8 p-6 bg-white dark:bg-gray-900 rounded shadow-sm border-2 border-green-100 dark:border-gray-700">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center">
+              <div className="w-16 h-16 bg-green-100 rounded flex items-center justify-center">
                 <DocumentTextIcon className="w-8 h-8 text-green-600" />
               </div>
               <div className="flex-1">
@@ -415,7 +415,7 @@ export default function PdfConverter() {
               <a
                 href={result.data}
                 download={result.name}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2"
               >
                 <ArrowDownTrayIcon className="w-4 h-4" />
                 Download
@@ -425,7 +425,7 @@ export default function PdfConverter() {
         )}
 
         {/* Tips */}
-        <div className="mt-8 p-4 bg-blue-50 dark:bg-gray-900 rounded-lg">
+        <div className="mt-8 p-4 bg-blue-50 dark:bg-gray-900 rounded">
           <h3 className="font-medium text-blue-800 mb-2">
             💡 Tips for best results
           </h3>

@@ -360,7 +360,7 @@ export default function Home() {
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
             className={`
-              relative w-full p-6 md:p-8 mb-4 border-3 border-dashed rounded-xl md:rounded-2xl
+              relative w-full p-6 md:p-8 mb-4 border-3 border-dashed rounded
               transition-all duration-300 cursor-pointer
               ${
                 isDragging
@@ -396,14 +396,14 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row justify-center gap-2 md:gap-3">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 text-white text-sm md:text-base rounded-lg active:bg-blue-700 hover:bg-blue-700 transition-colors shadow-md active:shadow-lg"
+                  className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 text-white text-sm md:text-base rounded active:bg-blue-700 hover:bg-blue-700 transition-colors shadow-md active:shadow-lg"
                 >
                   <PhotoIcon className="w-4 h-4 md:w-5 md:h-5" />
                   Select Images
                 </button>
                 <button
                   onClick={() => folderInputRef.current?.click()}
-                  className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-purple-600 text-white text-sm md:text-base rounded-lg active:bg-purple-700 hover:bg-purple-700 transition-colors shadow-md active:shadow-lg"
+                  className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-purple-600 text-white text-sm md:text-base rounded active:bg-purple-700 hover:bg-purple-700 transition-colors shadow-md active:shadow-lg"
                 >
                   <svg
                     className="w-4 h-4 md:w-5 md:h-5"
@@ -445,7 +445,7 @@ export default function Home() {
 
         {/* Error Display */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded flex items-start gap-3">
             <ExclamationCircleIcon className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm text-red-700">{error}</p>
@@ -462,7 +462,7 @@ export default function Home() {
         {/* Conversion Options */}
         {files.length > 0 && (
           <div className="mb-4 md:mb-6">
-            <div className="p-4 md:p-6 bg-white dark:bg-gray-900 rounded-xl shadow-sm border-2 border-blue-100 dark:border-gray-700">
+            <div className="p-4 md:p-6 bg-white dark:bg-gray-900 rounded shadow-sm border-2 border-blue-100 dark:border-gray-700">
               <div className="flex items-center mb-3 md:mb-4">
                 <h2 className="text-base md:text-lg font-semibold text-gray-700 dark:text-white flex items-center gap-2">
                   <span className="w-1 h-5 md:h-6 bg-blue-600 rounded-full"></span>
@@ -481,7 +481,7 @@ export default function Home() {
                     <select
                       value={format}
                       onChange={(e) => setFormat(e.target.value)}
-                      className="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-2.5 md:p-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white dark:bg-gray-800"
+                      className="w-full border border-gray-300 dark:border-gray-700 rounded p-2.5 md:p-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white dark:bg-gray-800"
                     >
                       <option value="png">PNG - Lossless</option>
                       <option value="jpg">JPG - Best for photos</option>
@@ -507,7 +507,7 @@ export default function Home() {
                       max="100"
                       value={quality}
                       onChange={(e) => setQuality(e.target.value)}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      className="w-full h-2 bg-gray-200 rounded appearance-none cursor-pointer accent-blue-600"
                     />
                     <div className="flex justify-between text-xs text-gray-500 dark:text-white mt-1">
                       <span>Small file</span>
@@ -532,7 +532,7 @@ export default function Home() {
                         placeholder="Auto"
                         value={width}
                         onChange={(e) => setWidth(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg p-2.5 md:p-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        className="w-full border border-gray-300 rounded p-2.5 md:p-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                       />
                     </div>
                     <div>
@@ -545,7 +545,7 @@ export default function Home() {
                         placeholder="Auto"
                         value={height}
                         onChange={(e) => setHeight(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg p-2.5 md:p-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        className="w-full border border-gray-300 rounded p-2.5 md:p-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                       />
                     </div>
                   </div>
@@ -579,10 +579,10 @@ export default function Home() {
               {files.map((file, index) => (
                 <div
                   key={`${file.name}-${index}`}
-                  className="flex items-center gap-2 md:gap-4 p-2 md:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="flex items-center gap-2 md:gap-4 p-2 md:p-3 bg-gray-50 dark:bg-gray-800 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   {/* Thumbnail */}
-                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden bg-gray-200 border border-gray-300 shrink-0 relative">
+                  <div className="w-12 h-12 md:w-16 md:h-16 rounded overflow-hidden bg-gray-200 border border-gray-300 shrink-0 relative">
                     <NextImage
                       src={URL.createObjectURL(file)}
                       alt={file.name}
@@ -652,7 +652,7 @@ export default function Home() {
             onClick={handleConvert}
             disabled={files.length === 0 || isConverting}
             className={`
-            w-full py-3 md:py-4 rounded-xl font-semibold text-base md:text-lg
+            w-full py-3 rounded font-semibold text-base md:text-lg
             transition-all duration-200 active:scale-98 hover:scale-102
             flex items-center justify-center gap-2
             ${
@@ -699,7 +699,7 @@ export default function Home() {
                 return (
                   <div
                     key={i}
-                    className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow"
+                    className="bg-white dark:bg-gray-900 rounded shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow"
                   >
                     {/* Image Container */}
                     <div className="aspect-video bg-gray-100 relative group">
@@ -768,7 +768,7 @@ export default function Home() {
                         <a
                           href={file.data}
                           download={file.name}
-                          className="shrink-0 p-2 text-gray-400 dark:text-white hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="shrink-0 p-2 text-gray-400 dark:text-white hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                           title="Download"
                         >
                           <ArrowDownTrayIcon className="w-4 h-4" />
@@ -791,7 +791,7 @@ export default function Home() {
                     link.click();
                   });
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
               >
                 <ArrowDownTrayIcon className="w-4 h-4" />
                 Download All ({results.length})

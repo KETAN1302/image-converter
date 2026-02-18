@@ -172,7 +172,7 @@ export default function CompressImage() {
       <div className="max-w-4xl mx-auto px-4 py-4 md:py-8">
         {/* Error Display */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3">
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded flex items-start gap-3">
             <ExclamationCircleIcon className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
@@ -194,7 +194,7 @@ export default function CompressImage() {
             onDragOver={(e) => e.preventDefault()}
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
-            className={`relative w-full p-6 md:p-8 border-3 border-dashed rounded-xl md:rounded-2xl transition-all duration-300 cursor-pointer ${
+            className={`relative w-full p-6 md:p-8 border-3 border-dashed rounded transition-all duration-300 cursor-pointer ${
               isDragging
                 ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-102 shadow-lg"
                 : "border-gray-300 dark:border-gray-700 hover:border-gray-400 bg-white dark:bg-gray-900 hover:shadow-md"
@@ -220,7 +220,7 @@ export default function CompressImage() {
               {/* Upload Button */}
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-md"
               >
                 <svg
                   className="w-5 h-5"
@@ -251,7 +251,7 @@ export default function CompressImage() {
 
         {/* File Preview & Options */}
         {file && (
-          <div className="mb-6 p-4 md:p-6 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="mb-6 p-4 md:p-6 bg-white dark:bg-gray-900 rounded shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base md:text-lg font-semibold text-gray-700 dark:text-white flex items-center gap-2">
                 <span className="w-1 h-5 md:h-6 bg-blue-600 rounded-full"></span>
@@ -267,8 +267,8 @@ export default function CompressImage() {
 
             {/* File Info */}
             <div className="mb-6">
-              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700">
+              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded">
+                <div className="w-16 h-16 rounded overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700">
                   {preview && (
                     <Image
                       src={preview}
@@ -318,7 +318,7 @@ export default function CompressImage() {
                   <button
                     key={preset.value}
                     onClick={() => setQuality(preset.value)}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all transform hover:scale-105 ${
+                    className={`px-4 py-2 rounded font-medium text-sm transition-all transform hover:scale-105 ${
                       quality === preset.value
                         ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30"
                         : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
@@ -331,7 +331,7 @@ export default function CompressImage() {
             </div>
 
             {/* Quality Slider */}
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+            <div className="bg-gray-50 dark:bg-gray-800 rounded p-4">
               <div className="flex justify-between items-center mb-3">
                 <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   Quality Adjustment
@@ -346,7 +346,7 @@ export default function CompressImage() {
                 max="100"
                 value={quality}
                 onChange={(e) => setQuality(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-300 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                className="w-full h-2 bg-gray-300 dark:bg-gray-600 rounded appearance-none cursor-pointer accent-blue-600"
               />
               <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
                 <span>Smaller file</span>
@@ -361,7 +361,7 @@ export default function CompressImage() {
           <button
             onClick={compressImage}
             disabled={loading || uploadProgress < 100}
-            className={`w-full py-4 rounded-xl font-semibold text-base md:text-lg transition-all duration-200 active:scale-98 flex items-center justify-center gap-2 ${
+            className={`w-full py-3 rounded font-semibold text-base md:text-lg transition-all duration-200 active:scale-98 flex items-center justify-center gap-2 ${
               !loading && uploadProgress === 100
                 ? "bg-blue-600 text-white hover:shadow-lg hover:scale-102"
                 : "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
@@ -389,7 +389,7 @@ export default function CompressImage() {
               Compression Complete
             </h2>
 
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="bg-white dark:bg-gray-900 rounded shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
               {/* Result Card */}
               <div className="grid md:grid-cols-2 gap-6 p-6">
                 {/* Image Preview */}
@@ -397,7 +397,7 @@ export default function CompressImage() {
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">
                     Compressed Image
                   </p>
-                  <div className="aspect-video rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                  <div className="aspect-video rounded overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                     {(result.preview || result.data) && (
                       <Image
                         src={result.preview || result.data}
@@ -412,7 +412,7 @@ export default function CompressImage() {
 
                 {/* Statistics */}
                 <div className="space-y-4">
-                  <div className="bg-linear-to-br from-blue-50 to-pink-50 dark:from-blue-900/30 dark:to-pink-900/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                  <div className="bg-linear-to-br from-blue-50 to-pink-50 dark:from-blue-900/30 dark:to-pink-900/30 rounded p-4 border border-blue-200 dark:border-blue-800">
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                       Original Size
                     </p>
@@ -421,7 +421,7 @@ export default function CompressImage() {
                     </p>
                   </div>
 
-                  <div className="bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                  <div className="bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 rounded p-4 border border-green-200 dark:border-green-800">
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                       Compressed Size
                     </p>
@@ -430,7 +430,7 @@ export default function CompressImage() {
                     </p>
                   </div>
 
-                  <div className="bg-linear-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                  <div className="bg-linear-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 rounded p-4 border border-blue-200 dark:border-blue-800">
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                       Space Saved
                     </p>
@@ -449,14 +449,14 @@ export default function CompressImage() {
                 <a
                   href={result.data}
                   download={result.name}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-medium"
                 >
                   <ArrowDownTrayIcon className="w-5 h-5" />
                   Download
                 </a>
                 <button
                   onClick={clearAll}
-                  className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+                  className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
                 >
                   Compress Another
                 </button>
