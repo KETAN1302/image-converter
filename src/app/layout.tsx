@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   keywords: [
     "image converter",
     "image to pdf",
+    "image to ico",
     "converter",
     "online tool",
     "crop image",
