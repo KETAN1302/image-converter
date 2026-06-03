@@ -23,23 +23,30 @@ export default function HeroSection() {
       label: "Image Converter",
       description: "Convert between image formats",
     },
-    {
-      href: "/image-to-ico",
-      icon: PhotoIcon,
-      label: "Image to ICO",
-      description: "Convert images to ICO",      
-    },
+
     {
       href: "/image-to-pdf",
       icon: DocumentTextIcon,
       label: "Image to PDF",
-      description: "Convert images to PDF",      
+      description: "Convert images to PDF",
+    },
+    {
+      href: "/pdf-to-image",
+      icon: DocumentTextIcon,
+      label: "PDF to Image",
+      description: "Convert PDF to images",
+    },
+    {
+      href: "/image-to-ico",
+      icon: PhotoIcon,
+      label: "Image to ICO",
+      description: "Convert images to ICO",
     },
     {
       href: "/compress",
       icon: LiaCompressArrowsAltSolid,
       label: "Compress",
-      description: "Reduce image file size",    
+      description: "Reduce image file size",
     },
     {
       href: "/crop",

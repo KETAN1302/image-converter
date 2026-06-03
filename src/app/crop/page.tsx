@@ -128,9 +128,8 @@ export default function CropImage() {
     setCropCoords(updated);
   };
 
-  const getMousePos = (e: React.MouseEvent<HTMLDivElement>) => {
+  const getMousePos = (e: { clientX: number; clientY: number }) => {
     if (!cropContainerRef.current) return { x: 0, y: 0 };
-    const rect = cropContainerRef.current.getBoundingClientRect();
     const img = imgRef.current;
     if (!img) return { x: 0, y: 0 };
 
@@ -220,7 +219,7 @@ export default function CropImage() {
     return null;
   };
 
-  const handleImageMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleImageMouseDown = (e: { clientX: number; clientY: number }) => {
     if (!imgRef.current) return;
     const { x, y } = getMousePos(e);
     const handle = getHandleAtPosition(x, y);
@@ -233,7 +232,7 @@ export default function CropImage() {
     }
   };
 
-  const handleImageMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleImageMouseMove = (e: { clientX: number; clientY: number }) => {
     if (!imgRef.current) return;
     const { x, y } = getMousePos(e);
 
@@ -251,7 +250,7 @@ export default function CropImage() {
     const deltaX = (x - startX) * scaleX;
     const deltaY = (y - startY) * scaleY;
 
-    let newCoords = { ...cropCoords };
+    const newCoords = { ...cropCoords };
 
     if (dragHandle === "move") {
       newCoords.x = Math.max(
@@ -343,29 +342,19 @@ export default function CropImage() {
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     if (!imgRef.current) return;
     const touch = e.touches[0];
-    const mouseEvent = new MouseEvent("mousedown", {
-      clientX: touch.clientX,
-      clientY: touch.clientY,
-    }) as any;
     handleImageMouseDown({
-      ...mouseEvent,
       clientX: touch.clientX,
       clientY: touch.clientY,
-    } as any);
+    });
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
     if (!isDrawing) return;
     const touch = e.touches[0];
-    const mouseEvent = new MouseEvent("mousemove", {
-      clientX: touch.clientX,
-      clientY: touch.clientY,
-    }) as any;
     handleImageMouseMove({
-      ...mouseEvent,
       clientX: touch.clientX,
       clientY: touch.clientY,
-    } as any);
+    });
   };
 
   const handleTouchEnd = () => {
@@ -608,6 +597,7 @@ export default function CropImage() {
               >
                 {preview && (
                   <div className="relative inline-block">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       ref={imgRef}
                       src={preview}

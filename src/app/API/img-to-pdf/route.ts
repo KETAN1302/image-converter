@@ -67,37 +67,13 @@ export async function POST(req: NextRequest) {
               height: metadata.height || 0,
             };
 
-            // If it's already JPEG and no special processing needed
-            if (
-              file.type === "image/jpeg" &&
-              pageSize === "auto" &&
-              margin === 0
-            ) {
+            // If it's already JPEG, we can use the buffer directly to save CPU and preserve quality.
+            // Otherwise, we convert it to JPEG with sharp.
+            if (file.type === "image/jpeg" || file.type === "image/jpg") {
               imageBuffer = buffer;
             } else {
-              // Process image with sharp
-              let pipeline = sharp(buffer);
-
-              // Apply margin (reduce image size to account for margin)
-              if (margin > 0 && margin < 50) {
-                const marginPercent = margin / 100;
-                const newWidth = metadata.width
-                  ? Math.floor(metadata.width * (1 - marginPercent))
-                  : undefined;
-                const newHeight = metadata.height
-                  ? Math.floor(metadata.height * (1 - marginPercent))
-                  : undefined;
-
-                pipeline = pipeline.resize({
-                  width: newWidth,
-                  height: newHeight,
-                  fit: "contain",
-                  background: { r: 255, g: 255, b: 255 },
-                });
-              }
-
               // Convert to JPEG with specified quality
-              const encoded = await pipeline
+              const encoded = await sharp(buffer)
                 .jpeg({
                   quality: quality,
                   mozjpeg: true,
@@ -138,11 +114,18 @@ export async function POST(req: NextRequest) {
             // Calculate page dimensions based on settings
             let pageWidth = result.width;
             let pageHeight = result.height;
+            const marginPercent = margin / 100;
 
             if (pageSize !== "auto") {
               const [width, height] = getPageSize(pageSize, orientation);
               pageWidth = width;
               pageHeight = height;
+            } else {
+              // For auto page size, expand page size to include margins
+              if (marginPercent > 0 && marginPercent < 0.5) {
+                pageWidth = result.width / (1 - 2 * marginPercent);
+                pageHeight = result.height / (1 - 2 * marginPercent);
+              }
             }
 
             // Ensure dimensions are valid
@@ -150,18 +133,32 @@ export async function POST(req: NextRequest) {
               throw new Error("Invalid page dimensions");
             }
 
+            // Calculate printable area
+            const maxMargin = 0.49;
+            const safeMarginPercent = Math.min(marginPercent, maxMargin);
+            const printableWidth = pageWidth * (1 - 2 * safeMarginPercent);
+            const printableHeight = pageHeight * (1 - 2 * safeMarginPercent);
+
+            // Scale image to fit within printable area while maintaining aspect ratio
+            const scale = Math.min(
+              printableWidth / result.width,
+              printableHeight / result.height
+            );
+            const drawWidth = result.width * scale;
+            const drawHeight = result.height * scale;
+
+            // Center image on the page
+            const x = (pageWidth - drawWidth) / 2;
+            const y = (pageHeight - drawHeight) / 2;
+
             // Add page
             const page = pdfDoc.addPage([pageWidth, pageHeight]);
-
-            // Calculate image position to center on page
-            const x = Math.max(0, (pageWidth - result.width) / 2);
-            const y = Math.max(0, (pageHeight - result.height) / 2);
 
             page.drawImage(image, {
               x,
               y,
-              width: result.width,
-              height: result.height,
+              width: drawWidth,
+              height: drawHeight,
             });
 
             processedImages.push(result.name);

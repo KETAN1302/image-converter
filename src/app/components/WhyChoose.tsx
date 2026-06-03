@@ -19,7 +19,10 @@ export default function WhyChoose() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    setIsVisible(true);
+    const handle = requestAnimationFrame(() => {
+      setIsVisible(true);
+    });
+    return () => cancelAnimationFrame(handle);
   }, []);
 
   // Properly typed variants
@@ -34,9 +37,9 @@ export default function WhyChoose() {
   };
 
   const itemVariants: Variants = {
-    hidden: { 
-      y: 20, 
-      opacity: 0 
+    hidden: {
+      y: 20,
+      opacity: 0,
     },
     visible: {
       y: 0,
@@ -80,7 +83,8 @@ export default function WhyChoose() {
     {
       icon: ShieldCheckIcon,
       title: "100% Private",
-      description: "Your files never leave your device. No servers, no uploads.",
+      description:
+        "Your files never leave your device. No servers, no uploads.",
       color: "from-red-500 to-orange-500",
       bgColor: "bg-red-50 dark:bg-red-900/20",
       iconColor: "text-red-600 dark:text-red-400",
@@ -110,21 +114,21 @@ export default function WhyChoose() {
     { value: "50K+", label: "Happy Users" },
     { value: "100K+", label: "Images Processed" },
     { value: "99.9%", label: "Uptime" },
-    { value: "4.9/5", label: "User Rating"},
+    { value: "4.9/5", label: "User Rating" },
   ];
 
   // Animation for stats items
   const statVariants: Variants = {
     hidden: { opacity: 0, scale: 0.8 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       scale: 1,
       transition: {
         type: "spring",
         stiffness: 100,
-        damping: 15
-      }
-    }
+        damping: 15,
+      },
+    },
   };
 
   return (
@@ -147,13 +151,13 @@ export default function WhyChoose() {
             <SparklesIcon className="w-4 h-4" />
             <span className="text-sm font-medium">Why developers love us</span>
           </div>
-          
+
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Everything you need in one place
           </h2>
-          
+
           <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Powerful image processing tools that work entirely in your browser. 
+            Powerful image processing tools that work entirely in your browser.
             No uploads, no waiting, complete privacy.
           </p>
         </motion.div>
@@ -169,18 +173,22 @@ export default function WhyChoose() {
             <motion.div
               key={feature.title}
               variants={itemVariants}
-              whileHover={{ 
+              whileHover={{
                 y: -5,
-                transition: { duration: 0.2 } 
+                transition: { duration: 0.2 },
               }}
               className="group relative bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700"
             >
               {/* Gradient Border on Hover */}
-              <div className={`absolute inset-0 rounded-2xl bg-linear-to-r ${feature.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
-              
+              <div
+                className={`absolute inset-0 rounded-2xl bg-linear-to-r ${feature.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}
+              />
+
               <div className="relative">
                 {/* Icon with Gradient Background */}
-                <div className={`inline-flex p-3 ${feature.bgColor} rounded-xl mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                <div
+                  className={`inline-flex p-3 ${feature.bgColor} rounded-xl mb-4 group-hover:scale-110 transition-transform duration-300`}
+                >
                   <feature.icon className={`w-6 h-6 ${feature.iconColor}`} />
                 </div>
 
@@ -188,7 +196,7 @@ export default function WhyChoose() {
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   {feature.title}
                 </h3>
-                
+
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {feature.description}
                 </p>
@@ -213,9 +221,9 @@ export default function WhyChoose() {
               transition: {
                 delay: 0.8,
                 duration: 0.6,
-                staggerChildren: 0.1
-              }
-            }
+                staggerChildren: 0.1,
+              },
+            },
           }}
           initial="hidden"
           animate={isVisible ? "visible" : "hidden"}
@@ -225,9 +233,9 @@ export default function WhyChoose() {
             <motion.div
               key={stat.label}
               variants={statVariants}
-              whileHover={{ 
+              whileHover={{
                 scale: 1.05,
-                transition: { duration: 0.2 }
+                transition: { duration: 0.2 },
               }}
               className="relative bg-linear-to-br from-gray-900 to-gray-800 dark:from-gray-800 dark:to-gray-700 rounded-2xl p-6 text-center group overflow-hidden"
             >
@@ -236,19 +244,17 @@ export default function WhyChoose() {
                 <div className="text-3xl sm:text-4xl font-bold text-white mb-2">
                   {stat.value}
                 </div>
-                <div className="text-sm text-gray-300">
-                  {stat.label}
-                </div>
+                <div className="text-sm text-gray-300">{stat.label}</div>
               </div>
 
               {/* Progress Bar */}
               <motion.div
                 initial={{ width: 0 }}
                 animate={isVisible ? { width: "100%" } : {}}
-                transition={{ 
-                  delay: 1 + index * 0.1, 
+                transition={{
+                  delay: 1 + index * 0.1,
                   duration: 0.8,
-                  ease: "easeInOut"
+                  ease: "easeInOut",
                 }}
                 className="absolute bottom-0 left-0 h-1 bg-linear-to-r from-blue-400 to-purple-400"
               />
@@ -266,7 +272,10 @@ export default function WhyChoose() {
           <div className="inline-flex items-center gap-3 bg-white dark:bg-gray-800 px-6 py-3 rounded-full shadow-sm border border-gray-200 dark:border-gray-700">
             <CloudArrowUpIcon className="w-5 h-5 text-green-500" />
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              <span className="font-semibold text-gray-900 dark:text-white">1M+</span> images processed this month
+              <span className="font-semibold text-gray-900 dark:text-white">
+                1M+
+              </span>{" "}
+              images processed this month
             </span>
             <DocumentTextIcon className="w-5 h-5 text-blue-500" />
           </div>

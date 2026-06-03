@@ -32,6 +32,40 @@ type DirectoryInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   directory?: string;
 };
 
+const isImageFile = (file: File) => {
+  return (
+    file.type.startsWith("image/") ||
+    /\.(jpg|jpeg|png|webp|avif|gif|svg|heic|heif|tiff|tif)$/i.test(file.name)
+  );
+};
+
+function FilePreviewImage({ file }: { file: File }) {
+  const [url, setUrl] = useState<string>("");
+
+  useEffect(() => {
+    const objectUrl = URL.createObjectURL(file);
+    const handle = requestAnimationFrame(() => {
+      setUrl(objectUrl);
+    });
+    return () => {
+      cancelAnimationFrame(handle);
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [file]);
+
+  if (!url) return null;
+
+  return (
+    <NextImage
+      src={url}
+      alt={file.name}
+      fill
+      unoptimized
+      className="object-cover"
+    />
+  );
+}
+
 export default function Home() {
   const [files, setFiles] = useState<File[]>([]);
   const [format, setFormat] = useState("png");
@@ -101,7 +135,7 @@ export default function Home() {
           fileEntry.file(resolve),
         );
 
-        if (file.type.startsWith("image/")) {
+        if (isImageFile(file)) {
           imageFiles.push(file);
           simulateUploadProgress(file.name);
         }
@@ -130,7 +164,7 @@ export default function Home() {
           );
         } else {
           const file = item.getAsFile();
-          if (file && file.type.startsWith("image/")) {
+          if (file && isImageFile(file)) {
             imageFiles.push(file);
             simulateUploadProgress(file.name);
           }
@@ -158,7 +192,7 @@ export default function Home() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
     const selectedFiles = Array.from(e.target.files || []).filter((file) =>
-      file.type.startsWith("image/"),
+      isImageFile(file),
     );
     selectedFiles.forEach((file) => {
       simulateUploadProgress(file.name);
@@ -169,7 +203,7 @@ export default function Home() {
   const handleFolderSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
     const selectedFiles = Array.from(e.target.files || []).filter((file) =>
-      file.type.startsWith("image/"),
+      isImageFile(file),
     );
     selectedFiles.forEach((file) => {
       simulateUploadProgress(file.name);
@@ -387,9 +421,7 @@ export default function Home() {
               </p>
 
               <p className="text-xs md:text-sm text-gray-500 dark:text-white mb-3 md:mb-4">
-                {isMobile
-                  ? "JPG, PNG, GIF, WebP"
-                  : "Supports: JPG, PNG, WebP, AVIF"}
+                Supports: JPG, PNG, WebP, AVIF, GIF, SVG, HEIC, TIFF
               </p>
 
               {/* Upload Buttons */}
@@ -429,7 +461,7 @@ export default function Home() {
             ref={fileInputRef}
             type="file"
             multiple
-            accept="image/*"
+            accept="image/*,.heic,.heif,.svg,.tiff,.tif"
             className="hidden"
             onChange={handleFileSelect}
           />
@@ -488,6 +520,12 @@ export default function Home() {
                       <option value="jpeg">JPEG - Best for photos</option>
                       <option value="webp">WebP - Modern format</option>
                       <option value="avif">AVIF - High compression</option>
+                      <option value="gif">GIF - Animated or static</option>
+                      <option value="svg">SVG - Vector wrapper</option>
+                      <option value="heic">
+                        HEIC - High efficiency (Apple format)
+                      </option>
+                      <option value="tiff">TIFF - High quality print</option>
                     </select>
                   </div>
 
@@ -583,16 +621,7 @@ export default function Home() {
                 >
                   {/* Thumbnail */}
                   <div className="w-12 h-12 md:w-16 md:h-16 rounded overflow-hidden bg-gray-200 border border-gray-300 shrink-0 relative">
-                    <NextImage
-                      src={URL.createObjectURL(file)}
-                      alt={file.name}
-                      fill
-                      unoptimized
-                      className="object-cover"
-                      onLoad={(e) =>
-                        URL.revokeObjectURL((e.target as HTMLImageElement).src)
-                      }
-                    />
+                    <FilePreviewImage file={file} />
                   </div>
 
                   {/* File Info */}

@@ -302,6 +302,7 @@ export default function RotateImage() {
               </label>
               <div className="border-2 border-gray-300 dark:border-gray-600 rounded overflow-hidden bg-gray-50 dark:bg-gray-800 p-4 flex items-center justify-center min-h-64">
                 {preview && (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={preview}
                     alt="Preview"

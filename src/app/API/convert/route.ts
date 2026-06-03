@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
         let output: Buffer;
         const fmt = format.toLowerCase();
 
-        // Handle format conversion with tuned TIFF options
+        // Handle format conversion
         switch (fmt) {
           case "png":
             output = await image.png({ compressionLevel: 9 }).toBuffer();
@@ -121,7 +121,33 @@ export async function POST(req: NextRequest) {
               .avif({ quality: Math.min(quality, 100), effort: 4 })
               .toBuffer();
             break;
-
+          case "gif":
+            output = await image.gif().toBuffer();
+            break;
+          case "tiff":
+            output = await image
+              .tiff({ quality: Math.min(quality, 100) })
+              .toBuffer();
+            break;
+          case "heic":
+          case "heif":
+            // Sharp doesn't support HEVC encoding natively on most setups due to patents.
+            // But it supports HEIF saving with AV1 compression (AVIF) which produces a fully valid
+            // HEIF container with AV1 compression (.heic/.heif format).
+            output = await image
+              .heif({ quality: Math.min(quality, 100), compression: "av1" })
+              .toBuffer();
+            break;
+          case "svg": {
+            // Convert to PNG buffer first, then wrap as inline base64 in SVG XML template
+            const pngBuffer = await image.png({ compressionLevel: 9 }).toBuffer();
+            const pngBase64 = pngBuffer.toString("base64");
+            const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${metadata.width || 800}" height="${metadata.height || 600}" viewBox="0 0 ${metadata.width || 800} ${metadata.height || 600}">
+  <image href="data:image/png;base64,${pngBase64}" width="100%" height="100%"/>
+</svg>`;
+            output = Buffer.from(svgContent, "utf-8");
+            break;
+          }
           default:
             throw new Error(`Unsupported format: ${format}`);
         }
@@ -129,16 +155,36 @@ export async function POST(req: NextRequest) {
         // Generate filename with proper extension and normalized mime type
         const originalName =
           file.name.split(".").slice(0, -1).join(".") || "image";
-        const mime = fmt === "jpg" || fmt === "jpeg" ? "jpeg" : fmt;
-        const extension = mime === "jpeg" ? "jpg" : mime;
-        const fileName = `${originalName}.${extension}`;
 
+        let mime: string = fmt;
+        if (fmt === "jpg" || fmt === "jpeg") {
+          mime = "jpeg";
+        } else if (fmt === "svg") {
+          mime = "svg+xml";
+        }
+
+        let extension = fmt;
+        if (fmt === "jpeg") {
+          extension = "jpg";
+        }
+
+        const fileName = `${originalName}.${extension}`;
         const base64 = output.toString("base64");
+
+        // Generate JPEG preview for formats that web browsers cannot natively render (HEIC/TIFF)
+        let preview: string | undefined = undefined;
+        if (fmt === "heic" || fmt === "heif" || fmt === "tiff") {
+          const previewBuffer = await image
+            .jpeg({ quality: 60 })
+            .toBuffer();
+          preview = `data:image/jpeg;base64,${previewBuffer.toString("base64")}`;
+        }
 
         return {
           name: fileName,
           data: `data:image/${mime};base64,${base64}`,
-        } as { name: string; data: string; preview?: string };
+          preview,
+        };
       } catch (fileError) {
         console.error(`Error processing file ${file.name}:`, fileError);
         return null;
@@ -183,6 +229,6 @@ export async function GET() {
     version: "1.0",
     maxFileSize: "50MB",
     maxFiles: 20,
-    supportedFormats: ["png", "jpg", "jpeg", "webp", "avif"],
+    supportedFormats: ["png", "jpg", "jpeg", "webp", "avif", "gif", "svg", "heic", "heif", "tiff"],
   });
 }

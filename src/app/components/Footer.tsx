@@ -18,7 +18,10 @@ export default function Footer() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    setIsVisible(true);
+    const handle = requestAnimationFrame(() => {
+      setIsVisible(true);
+    });
+    return () => cancelAnimationFrame(handle);
   }, []);
 
   const tools = [
@@ -31,6 +34,16 @@ export default function Footer() {
       name: "Image to PDF",
       href: "/image-to-pdf",
       description: "Create PDF from images",
+    },
+    {
+      name: "PDF to Image",
+      href: "/pdf-to-image",
+      description: "Convert PDF to images",
+    },
+    {
+      name: "Image to ICO",
+      href: "/image-to-ico",
+      description: "Convert image to ico",
     },
     {
       name: "Compress Image",
@@ -264,7 +277,7 @@ export default function Footer() {
           {/* Tools Column */}
           <motion.div
             variants={itemVariants}
-            className="col-span-1 lg:col-span-1"
+            className="col-span-1 lg:col-span-1 "
           >
             <motion.h3
               variants={itemVariants}
@@ -273,7 +286,7 @@ export default function Footer() {
               Image Tools
             </motion.h3>
             <ul className="space-y-2">
-              {tools.slice(0, 6).map((tool) => (
+              {tools.slice(0, 8).map((tool) => (
                 <motion.li
                   key={tool.href}
                   variants={linkVariants}

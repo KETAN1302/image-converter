@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useRef, DragEvent } from "react";
+import { useState, useRef, DragEvent, useEffect } from "react";
+import Image from "next/image";
 import {
   DocumentArrowUpIcon,
   XMarkIcon,
   PhotoIcon,
   ArrowDownTrayIcon,
-  Cog6ToothIcon,
   DocumentTextIcon,
   ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
@@ -18,6 +18,33 @@ type PdfResult = {
   failedCount: number;
   data: string;
 };
+
+function FilePreviewImage({ file }: { file: File }) {
+  const [url, setUrl] = useState<string>("");
+
+  useEffect(() => {
+    const objectUrl = URL.createObjectURL(file);
+    const handle = requestAnimationFrame(() => {
+      setUrl(objectUrl);
+    });
+    return () => {
+      cancelAnimationFrame(handle);
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [file]);
+
+  if (!url) return null;
+
+  return (
+    <Image
+      src={url}
+      alt={file.name}
+      fill
+      unoptimized
+      className="object-cover"
+    />
+  );
+}
 
 export default function PdfConverter() {
   const [files, setFiles] = useState<File[]>([]);
@@ -138,21 +165,21 @@ export default function PdfConverter() {
   return (
     <main className="min-h-screen">
       {/* Header */}
-      <div className="sticky top-0 z-10 backdrop-blur-md border-b border-gray-200 px-4 py-4">
+      <div className="sticky top-0 z-10 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 py-3">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-            <DocumentTextIcon className="w-8 h-8 text-blue-500" />
-            <span className="bg-linear-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent">
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2.5">
+            <DocumentTextIcon className="w-8 h-8 text-blue-500 shrink-0" />
+            <span className="bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
               Image to PDF Converter
             </span>
           </h1>
-          <p className="text-sm text-gray-600 dark:text-white mt-1">
+          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1">
             Convert your images to PDF documents instantly
           </p>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-4xl mx-auto px-4 py-4 md:py-8">
         {/* Drop Zone */}
         <div
           onDrop={handleDrop}
@@ -160,15 +187,11 @@ export default function PdfConverter() {
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onClick={() => fileInputRef.current?.click()}
-          className={`
-            relative w-full p-8 mb-6 border-3 border-dashed rounded
-            transition-all duration-300 cursor-pointer
-            ${
-              isDragging
-                ? "border-blue-500 bg-blue-50 scale-102 shadow-lg"
-                : "border-gray-300 dark:border-gray-700 hover:border-blue-400 bg-white dark:bg-gray-900 hover:shadow-md"
-            }
-          `}
+          className={`relative w-full p-8 mb-6 border-3 border-dashed rounded-2xl transition-all duration-300 cursor-pointer ${
+            isDragging
+              ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-102 shadow-lg"
+              : "border-gray-300 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-gray-900 hover:shadow-md"
+          }`}
         >
           <input
             ref={fileInputRef}
@@ -182,20 +205,22 @@ export default function PdfConverter() {
           <div className="text-center">
             <DocumentArrowUpIcon
               className={`w-16 h-16 mx-auto mb-4 transition-all duration-300 ${
-                isDragging ? "text-blue-500 scale-110" : "text-gray-400"
+                isDragging
+                  ? "text-blue-500 scale-110"
+                  : "text-gray-400 dark:text-gray-650"
               }`}
             />
 
             <p className="text-lg font-semibold text-gray-700 dark:text-white mb-2">
-              {isDragging ? "Drop images here" : "Drag & drop images here"}
+              {isDragging ? "Drop images here" : "Drag & drop your images here"}
             </p>
 
-            <p className="text-sm text-gray-500 dark:text-white mb-4">
-              or click to select files (JPG, PNG, WebP, GIF)
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              or click to browse from your device (JPG, PNG, WebP, GIF)
             </p>
 
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded text-sm">
-              <PhotoIcon className="w-4 h-4" />
+            <div className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-md active:scale-98 transition-all">
+              <PhotoIcon className="w-5 h-5" />
               Select Images
             </div>
           </div>
@@ -203,13 +228,13 @@ export default function PdfConverter() {
 
         {/* Error Display */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded flex items-start gap-3">
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
             <ExclamationCircleIcon className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm text-red-700">{error}</p>
+              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
               <button
                 onClick={() => setError(null)}
-                className="text-xs text-red-600 hover:text-red-800 mt-1"
+                className="text-xs text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-300 mt-1 font-semibold"
               >
                 Dismiss
               </button>
@@ -219,41 +244,40 @@ export default function PdfConverter() {
 
         {/* Selected Files */}
         {files.length > 0 && (
-          <div className="mb-6 p-4 bg-white dark:bg-gray-900 rounded shadow-sm">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="font-semibold text-gray-700 dark:text-white">
+          <div className="mb-6 p-4 md:p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 animate-in fade-in duration-200">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-100 dark:border-gray-800">
+              <h2 className="font-semibold text-gray-700 dark:text-white flex items-center gap-2">
+                <span className="w-1.5 h-6 bg-blue-600 rounded-full"></span>
                 Selected Images ({files.length})
               </h2>
               <button
                 onClick={clearAll}
-                className="text-sm text-red-600 hover:text-red-700"
+                className="text-xs md:text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-semibold"
               >
                 Clear All
               </button>
             </div>
 
-            <div className="space-y-2 max-h-60 overflow-y-auto">
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
               {files.map((file, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-800 rounded"
+                  className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800/50 rounded-xl"
                 >
-                  <div className="w-10 h-10 rounded bg-gray-200 overflow-hidden shrink-0">
-                    <img
-                      src={URL.createObjectURL(file)}
-                      alt={file.name}
-                      className="object-cover"
-                    />
+                  <div className="w-10 h-10 rounded bg-gray-200 overflow-hidden shrink-0 relative">
+                    <FilePreviewImage file={file} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{file.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-white">
+                    <p className="text-sm font-semibold truncate">
+                      {file.name}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {formatFileSize(file.size)}
                     </p>
                   </div>
                   <button
                     onClick={() => removeFile(index)}
-                    className="p-1 text-gray-400 dark:text-white   hover:text-red-500"
+                    className="p-1.5 text-gray-400 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     <XMarkIcon className="w-4 h-4" />
                   </button>
@@ -265,23 +289,23 @@ export default function PdfConverter() {
 
         {/* PDF Options */}
         {files.length > 0 && (
-          <div className="mb-6 p-4 bg-white dark:bg-gray-900 rounded shadow-sm border-2 border-blue-100 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-4">
+          <div className="mb-6 p-4 md:p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 dark:border-gray-800">
               <h2 className="font-semibold text-gray-700 dark:text-white flex items-center gap-2">
-                <Cog6ToothIcon className="w-5 h-5 text-blue-500" />
+                <span className="w-1.5 h-6 bg-blue-600 rounded-full"></span>
                 PDF Settings
               </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Page Size
                 </label>
                 <select
                   value={pageSize}
                   onChange={(e) => setPageSize(e.target.value)}
-                  className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 rounded p-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-850 text-gray-900 dark:text-white rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   <option value="auto">Auto (match image size)</option>
                   <option value="a4">A4</option>
@@ -293,13 +317,13 @@ export default function PdfConverter() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Orientation
                 </label>
                 <select
                   value={orientation}
                   onChange={(e) => setOrientation(e.target.value)}
-                  className="w-full border border-gray-300 dark:border-gray-700 dark:text-white dark:bg-gray-800 rounded p-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-850 text-gray-900 dark:text-white rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   <option value="auto">Auto (follow image)</option>
                   <option value="portrait">Portrait</option>
@@ -308,37 +332,47 @@ export default function PdfConverter() {
               </div>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
-                  Image Quality: {quality}%
-                </label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-sm font-medium text-gray-750 dark:text-gray-300">
+                    Image Quality
+                  </label>
+                  <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                    {quality}%
+                  </span>
+                </div>
                 <input
                   type="range"
                   min="1"
                   max="100"
                   value={quality}
                   onChange={(e) => setQuality(e.target.value)}
-                  className="w-full"
+                  className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded appearance-none cursor-pointer accent-blue-600"
                 />
-                <p className="text-xs text-gray-500 dark:text-white mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                   Higher quality = larger file size
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-white mb-1">
-                  Margin: {margin}%
-                </label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-sm font-medium text-gray-750 dark:text-gray-300">
+                    Margin
+                  </label>
+                  <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                    {margin}%
+                  </span>
+                </div>
                 <input
                   type="range"
                   min="0"
                   max="25"
                   value={margin}
                   onChange={(e) => setMargin(e.target.value)}
-                  className="w-full"
+                  className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded appearance-none cursor-pointer accent-blue-600"
                 />
-                <p className="text-xs text-gray-500 dark:text-white mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                   Space around the image on the page
                 </p>
               </div>
@@ -352,15 +386,7 @@ export default function PdfConverter() {
             <button
               onClick={handleConvert}
               disabled={isConverting}
-              className={`
-                w-full py-3 rounded font-semibold text-lg
-                transition-all duration-200 flex items-center justify-center gap-2
-                ${
-                  !isConverting
-                    ? "bg-linear-to-r from-blue-600 to-blue-600 text-white hover:shadow-lg"
-                    : "bg-gray-300 dark:bg-gray-800 text-gray-500 cursor-not-allowed"
-                }
-              `}
+              className="w-full py-3.5 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-gray-300 disabled:to-gray-300 dark:disabled:from-gray-800 dark:disabled:to-gray-800 disabled:text-gray-500 text-white font-semibold rounded-xl transition-all shadow-md active:scale-99 flex items-center justify-center gap-2"
             >
               {isConverting ? (
                 <>
@@ -378,9 +404,9 @@ export default function PdfConverter() {
             {/* Progress Bar */}
             {isConverting && (
               <div className="mt-4">
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-2 bg-gray-150 dark:bg-gray-800 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-linear-to-r from-blue-500 to-blue-500 transition-all duration-300"
+                    className="h-full bg-linear-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -394,16 +420,16 @@ export default function PdfConverter() {
 
         {/* Result */}
         {result && (
-          <div className="mt-8 p-6 bg-white dark:bg-gray-900 rounded shadow-sm border-2 border-green-100 dark:border-gray-700">
+          <div className="mt-8 p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 animate-in fade-in duration-300">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-green-100 rounded flex items-center justify-center">
-                <DocumentTextIcon className="w-8 h-8 text-green-600" />
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                <DocumentTextIcon className="w-8 h-8 text-green-600 dark:text-green-400" />
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-gray-700 dark:text-white">
                   {result.name}
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-white">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {result.pageCount} pages • {formatFileSize(result.size)}
                 </p>
                 {result.failedCount > 0 && (
@@ -415,7 +441,7 @@ export default function PdfConverter() {
               <a
                 href={result.data}
                 download={result.name}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2"
+                className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold shadow-md transition-colors flex items-center gap-2"
               >
                 <ArrowDownTrayIcon className="w-4 h-4" />
                 Download
@@ -425,11 +451,11 @@ export default function PdfConverter() {
         )}
 
         {/* Tips */}
-        <div className="mt-8 p-4 bg-blue-50 dark:bg-gray-900 rounded">
-          <h3 className="font-medium text-blue-800 mb-2">
+        <div className="mt-8 p-5 bg-blue-50/70 dark:bg-gray-900/50 rounded-2xl border border-blue-100/50 dark:border-gray-800">
+          <h3 className="font-semibold text-blue-800 dark:text-blue-400 text-sm mb-3">
             💡 Tips for best results
           </h3>
-          <ul className="text-sm text-blue-700 space-y-1">
+          <ul className="text-xs text-blue-700 dark:text-blue-300/80 space-y-2 leading-relaxed">
             <li>• Use high-quality images for better PDF output</li>
             <li>• For documents, use A4 size with 0% margin</li>
             <li>• Maximum 30 images at once</li>

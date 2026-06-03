@@ -51,7 +51,7 @@ export default function Header() {
   const imageTools = [
     {
       name: "Convert Format",
-      href: "/convert",
+      href: "/converter",
       icon: SwatchIcon,
       description: "JPG, PNG, WEBP & more",
     },
@@ -87,6 +87,12 @@ export default function Header() {
       href: "/image-to-pdf",
       icon: DocumentTextIcon,
       description: "Convert images to PDF",
+    },
+    {
+      name: "PDF to Image",
+      href: "/pdf-to-image",
+      icon: PhotoIcon,
+      description: "Convert PDF to images",
     },
   ];
 
@@ -342,15 +348,6 @@ export default function Header() {
           </div>
         </div>
       </div>
-
-      {/* Add CSS for extra small screens */}
-      <style jsx>{`
-        @media (min-width: 480px) {
-          .xs\\:block {
-            display: block;
-          }
-        }
-      `}</style>
     </header>
   );
 }
