@@ -21,11 +21,17 @@ export default function ThemeToggle({
 }: {
   className?: string;
 }) {
-  const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const mounted = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     const storedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
     return storedTheme === "dark" || (!storedTheme && prefersDark);
   });
 
@@ -70,7 +76,10 @@ export default function ThemeToggle({
       {isDark ? (
         <SunIcon className="w-5 h-5 text-amber-400" aria-hidden="true" />
       ) : (
-        <MoonIcon className="w-5 h-5 text-gray-950 dark:text-white" aria-hidden="true" />
+        <MoonIcon
+          className="w-5 h-5 text-gray-950 dark:text-white"
+          aria-hidden="true"
+        />
       )}
     </button>
   );

@@ -11,8 +11,8 @@ import {
   ArrowDownTrayIcon,
   DocumentTextIcon,
   ExclamationCircleIcon,
-  ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
+import { ChevronsLeft } from "lucide-react";
 
 type PdfResult = {
   name: string;
@@ -183,26 +183,28 @@ export default function PdfConverter() {
       {/* Header */}
       <div className="sticky top-0 z-10 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2.5">
-              <DocumentTextIcon className="w-8 h-8 text-blue-500 shrink-0" />
+          <div className="flex items-center min-w-[70px]">
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 text-base font-semibold text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              <ChevronsLeft className="w-5 h-5" />
+              <span>Home</span>
+            </Link>
+          </div>
+          <div className="text-center px-2">
+            <h1 className="text-xl md:text-2xl font-bold flex items-center justify-center gap-2">
+              <DocumentTextIcon className="w-6 h-6 text-blue-500 shrink-0" />
               <span className="bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                 Image to PDF Converter
               </span>
             </h1>
-            <p className="font-medium text-xs md:text-sm text-gray-950 dark:text-white mt-1">
+            <p className="font-medium text-xs md:text-sm text-gray-950 dark:text-white">
               Convert your images to PDF documents instantly
             </p>
           </div>
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center justify-end min-w-[70px]">
             <ThemeToggle />
-            <Link
-              href="/"
-              className="flex items-center gap-1.5 text-sm font-semibold text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              <ArrowLeftIcon className="w-4 h-4" />
-              <span>Home</span>
-            </Link>
           </div>
         </div>
       </div>

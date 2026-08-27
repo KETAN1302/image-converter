@@ -6,9 +6,6 @@ import Image from "next/image";
 import { motion, Variants } from "framer-motion";
 import {
   HeartIcon,
-  ShieldCheckIcon,
-  ClockIcon,
-  DevicePhoneMobileIcon,
   ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline";
 import { useState, useEffect } from "react";
@@ -129,28 +126,6 @@ export default function Footer() {
     },
   };
 
-  const featureIconVariants: Variants = {
-    hidden: { scale: 0, rotate: -180 },
-    visible: {
-      scale: 1,
-      rotate: 0,
-      transition: {
-        type: "spring",
-        stiffness: 200,
-        damping: 15,
-      },
-    },
-    hover: {
-      scale: 1.2,
-      rotate: 10,
-      transition: {
-        type: "spring",
-        stiffness: 400,
-        damping: 10,
-      },
-    },
-  };
-
   const linkVariants: Variants = {
     hidden: { x: -10, opacity: 0 },
     visible: {
@@ -214,7 +189,7 @@ export default function Footer() {
       transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
       className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Main Footer Content */}
         <motion.div
           variants={containerVariants}
@@ -230,7 +205,7 @@ export default function Footer() {
             <motion.div
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
-              className="relative w-50 h-24"
+              className="relative w-40 h-14"
             >
               <Image
                 src="/logo.png"

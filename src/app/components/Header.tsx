@@ -113,14 +113,14 @@ export default function Header() {
   ];
 
   return (
-    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
-        <div className="flex justify-between items-center h-16">
+    <header className="bg-white dark:bg-gray-900 shadow sticky top-0 z-50">
+      <nav className="max-w-6xl mx-auto px-4">
+        <div className="flex justify-between items-center h-14">
           {/* Left: Logo & Tools Navigation */}
           <div className="flex items-center gap-4 lg:gap-6">
             {/* Logo Section */}
             <Link href="/" className="shrink-0">
-              <div className="relative w-40 h-14">
+              <div className="relative w-20 h-10">
                 <Image
                   src="/logo.png"
                   alt="ImageConverter Logo"

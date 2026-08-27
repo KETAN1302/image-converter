@@ -163,21 +163,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="relative overflow-hidden bg-linear-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 py-16 md:py-20">
-      {/* Animated Background Elements */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 0.6, scale: 1 }}
-        transition={{ duration: 1.5, ease: "easeOut" }}
-        className="absolute -top-40 -right-40 w-80 h-80 bg-linear-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"
-      />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 0.6, scale: 1 }}
-        transition={{ duration: 1.5, delay: 0.3, ease: "easeOut" }}
-        className="absolute -bottom-40 -left-40 w-80 h-80 bg-linear-to-tr from-green-400/20 to-cyan-400/20 rounded-full blur-3xl"
-      />
-
+    <section className="relative overflow-hidden bg-white dark:bg-gray-950 py-16">
       <div className="relative max-w-6xl mx-auto px-4">
         {/* New Feature Badge */}
         <motion.div
@@ -284,7 +270,7 @@ export default function HeroSection() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
         >
           {tools.map((tool, index) => {
             const Icon = tool.icon;
@@ -301,7 +287,7 @@ export default function HeroSection() {
               >
                 <Link
                   href={tool.href}
-                  className="group relative block p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-transparent hover:shadow-xl transition-all duration-300 overflow-hidden"
+                  className="group relative block p-6 bg-white dark:bg-gray-800 rounded-sm border border-gray-200 dark:border-gray-700 hover:border-transparent hover:shadow-lg transition-all duration-300 overflow-hidden"
                 >
                   {/* Gradient Background on Hover */}
                   <motion.div

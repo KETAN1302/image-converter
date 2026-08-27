@@ -9,8 +9,6 @@ import {
   ShieldCheckIcon,
   BoltIcon,
   DevicePhoneMobileIcon,
-  CloudArrowUpIcon,
-  DocumentTextIcon,
   SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { motion, Variants } from "framer-motion";
@@ -110,36 +108,9 @@ export default function WhyChoose() {
     },
   ];
 
-  const stats = [
-    { value: "50K+", label: "Happy Users" },
-    { value: "100K+", label: "Images Processed" },
-    { value: "99.9%", label: "Uptime" },
-    { value: "4.9/5", label: "User Rating" },
-  ];
-
-  // Animation for stats items
-  const statVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 15,
-      },
-    },
-  };
-
   return (
-    <section className="relative overflow-hidden bg-linear-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 py-16 sm:py-24">
-      {/* Background Decorations */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-linear-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-linear-to-tr from-green-400/20 to-cyan-400/20 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative overflow-hidden bg-linear-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 py-16">
+      <div className="relative max-w-6xl mx-auto px-4">
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -148,8 +119,13 @@ export default function WhyChoose() {
           className="text-center mb-12 sm:mb-16"
         >
           <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 px-4 py-2 rounded-full mb-4">
-            <SparklesIcon aria-hidden="true" className="w-4 h-4 text-blue-700 dark:text-blue-300" />
-            <span className="text-sm font-semibold">Why developers love us</span>
+            <SparklesIcon
+              aria-hidden="true"
+              className="w-4 h-4 text-blue-700 dark:text-blue-300"
+            />
+            <span className="text-sm font-semibold">
+              Why developers love us
+            </span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-950 dark:text-white mb-4">
@@ -167,7 +143,7 @@ export default function WhyChoose() {
           variants={containerVariants}
           initial="hidden"
           animate={isVisible ? "visible" : "hidden"}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-16"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
         >
           {features.map((feature) => (
             <motion.div
@@ -189,7 +165,10 @@ export default function WhyChoose() {
                 <div
                   className={`inline-flex p-3 ${feature.bgColor} rounded-xl mb-4 group-hover:scale-110 transition-transform duration-300`}
                 >
-                  <feature.icon aria-hidden="true" className={`w-6 h-6 ${feature.iconColor}`} />
+                  <feature.icon
+                    aria-hidden="true"
+                    className={`w-6 h-6 ${feature.iconColor}`}
+                  />
                 </div>
 
                 {/* Content */}
@@ -209,76 +188,6 @@ export default function WhyChoose() {
               </div>
             </motion.div>
           ))}
-        </motion.div>
-
-        {/* Stats Section with Counter Animation */}
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: {
-              opacity: 1,
-              y: 0,
-              transition: {
-                delay: 0.8,
-                duration: 0.6,
-                staggerChildren: 0.1,
-              },
-            },
-          }}
-          initial="hidden"
-          animate={isVisible ? "visible" : "hidden"}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-4"
-        >
-          {stats.map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              variants={statVariants}
-              whileHover={{
-                scale: 1.05,
-                transition: { duration: 0.2 },
-              }}
-              className="relative bg-linear-to-br from-gray-900 to-gray-800 dark:from-gray-800 dark:to-gray-700 rounded-2xl p-6 text-center group overflow-hidden"
-            >
-              {/* Content */}
-              <div className="relative">
-                <div className="text-3xl sm:text-4xl font-bold text-white mb-2">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-gray-100 font-semibold">{stat.label}</div>
-              </div>
-
-              {/* Progress Bar */}
-              <motion.div
-                initial={{ width: 0 }}
-                animate={isVisible ? { width: "100%" } : {}}
-                transition={{
-                  delay: 1 + index * 0.1,
-                  duration: 0.8,
-                  ease: "easeInOut",
-                }}
-                className="absolute bottom-0 left-0 h-1 bg-linear-to-r from-blue-400 to-purple-400"
-              />
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* Trust Badge */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={isVisible ? { opacity: 1 } : {}}
-          transition={{ delay: 1.2, duration: 0.6 }}
-          className="mt-12 text-center"
-        >
-          <div className="inline-flex items-center gap-3 bg-white dark:bg-gray-800 px-6 py-3 rounded-full shadow-sm border border-gray-200 dark:border-gray-700">
-            <CloudArrowUpIcon aria-hidden="true" className="w-5 h-5 text-green-600 dark:text-green-400" />
-            <span className="text-sm font-medium text-gray-950 dark:text-white">
-              <span className="font-bold text-gray-950 dark:text-white">
-                1M+
-              </span>{" "}
-              images processed this month
-            </span>
-            <DocumentTextIcon aria-hidden="true" className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          </div>
         </motion.div>
       </div>
     </section>
