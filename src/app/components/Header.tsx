@@ -56,55 +56,46 @@ export default function Header() {
       name: "Convert Format",
       href: "/converter",
       icon: SwatchIcon,
-      description: "JPG, PNG, WEBP & more",
     },
     {
       name: "Remove Background",
       href: "/remove-background",
       icon: SparklesIcon,
-      description: "AI Background Remover",
     },
     {
       name: "Upscale Image",
       href: "/upscale",
       icon: SparklesIcon,
-      description: "AI Image Upscaler & Enhancer",
     },
     {
       name: "Blur & Censor",
       href: "/blur-image",
       icon: EyeSlashIcon,
-      description: "Blur faces, plates & text",
     },
     {
       name: "Compress Image",
       href: "/compress",
       icon: LiaCompressArrowsAltSolid,
-      description: "Reduce file size",
     },
     {
       name: "Resize Image",
       href: "/resize",
       icon: ArrowsPointingOutIcon,
-      description: "Change dimensions",
     },
     {
       name: "Crop Image",
       href: "/crop",
       icon: ScissorsIcon,
-      description: "Cut out parts",
     },
     {
       name: "Rotate Image",
       href: "/rotate",
       icon: MdOutlineRotate90DegreesCw,
-      description: "Flip & rotate",
     },
     {
       name: "Image to ICO",
       href: "/image-to-ico",
       icon: PhotoIcon,
-      description: "Convert images to ICO",
     },
   ];
 
@@ -113,13 +104,11 @@ export default function Header() {
       name: "Image to PDF",
       href: "/image-to-pdf",
       icon: DocumentTextIcon,
-      description: "Convert images to PDF",
     },
     {
       name: "PDF to Image",
       href: "/pdf-to-image",
       icon: PhotoIcon,
-      description: "Convert PDF to images",
     },
   ];
 
@@ -127,124 +116,121 @@ export default function Header() {
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
         <div className="flex justify-between items-center h-16">
-          {/* Logo Section */}
-          <Link href="/">
-            <div className="relative w-40 h-14">
-              <Image
-                src="/logo.png"
-                alt="ImageConverter Logo"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-1">
-            {/* Image Tools Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setIsImageToolsOpen(!isImageToolsOpen)}
-                onMouseEnter={() => setIsImageToolsOpen(true)}
-                onMouseLeave={() => setIsImageToolsOpen(false)}
-                aria-expanded={isImageToolsOpen}
-                aria-haspopup="true"
-                aria-label="Image Tools Menu"
-                className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all"
-              >
-                <span>Image Tools</span>
-                <ChevronDownIcon
-                  aria-hidden="true"
-                  className={`w-4 h-4 transition-transform ${isImageToolsOpen ? "rotate-180" : ""}`}
+          {/* Left: Logo & Tools Navigation */}
+          <div className="flex items-center gap-4 lg:gap-6">
+            {/* Logo Section */}
+            <Link href="/" className="shrink-0">
+              <div className="relative w-40 h-14">
+                <Image
+                  src="/logo.png"
+                  alt="ImageConverter Logo"
+                  fill
+                  className="object-contain"
+                  priority
                 />
-              </button>
+              </div>
+            </Link>
 
-              {/* Desktop Dropdown Menu */}
-              {isImageToolsOpen && (
-                <div
+            {/* Desktop Navigation (Next to Logo) */}
+            <div className="hidden lg:flex items-center gap-1">
+              {/* Image Tools Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsImageToolsOpen(!isImageToolsOpen)}
                   onMouseEnter={() => setIsImageToolsOpen(true)}
                   onMouseLeave={() => setIsImageToolsOpen(false)}
-                  role="menu"
-                  className="absolute top-full left-0 mt-1 w-72 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 py-2 animate-in fade-in slide-in-from-top-2"
+                  aria-expanded={isImageToolsOpen}
+                  aria-haspopup="true"
+                  aria-label="Image Tools Menu"
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all cursor-pointer"
                 >
-                  {imageTools.map((tool) => (
-                    <Link
-                      key={tool.href}
-                      href={tool.href}
-                      role="menuitem"
-                      className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
-                    >
-                      <tool.icon aria-hidden="true" className="w-5 h-5 text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-semibold text-gray-950 dark:text-white">
-                          {tool.name}
-                        </div>
-                        <div className="text-xs font-medium text-gray-800 dark:text-gray-200">
-                          {tool.description}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+                  <span>Image Tools</span>
+                  <ChevronDownIcon
+                    aria-hidden="true"
+                    className={`w-4 h-4 transition-transform ${isImageToolsOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
 
-            {/* PDF Tools Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setIsPDFToolsOpen(!isPDFToolsOpen)}
-                onMouseEnter={() => setIsPDFToolsOpen(true)}
-                onMouseLeave={() => setIsPDFToolsOpen(false)}
-                aria-expanded={isPDFToolsOpen}
-                aria-haspopup="true"
-                aria-label="PDF Tools Menu"
-                className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all"
-              >
-                <span>PDF Tools</span>
-                <ChevronDownIcon
-                  aria-hidden="true"
-                  className={`w-4 h-4 transition-transform ${isPDFToolsOpen ? "rotate-180" : ""}`}
-                />
-              </button>
+                {/* Desktop Dropdown Menu: 2 Columns without description */}
+                {isImageToolsOpen && (
+                  <div
+                    onMouseEnter={() => setIsImageToolsOpen(true)}
+                    onMouseLeave={() => setIsImageToolsOpen(false)}
+                    role="menu"
+                    className="absolute top-full left-0 mt-1 w-[450px] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 p-2 animate-in fade-in slide-in-from-top-2 z-50"
+                  >
+                    <div className="grid grid-cols-2 gap-1">
+                      {imageTools.map((tool) => (
+                        <Link
+                          key={tool.href}
+                          href={tool.href}
+                          role="menuitem"
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-800 text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-semibold text-sm transition-colors group"
+                        >
+                          <tool.icon
+                            aria-hidden="true"
+                            className="w-4 h-4 text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 shrink-0"
+                          />
+                          <span className="truncate">{tool.name}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
 
-              {/* Desktop Dropdown Menu */}
-              {isPDFToolsOpen && (
-                <div
+              {/* PDF Tools Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsPDFToolsOpen(!isPDFToolsOpen)}
                   onMouseEnter={() => setIsPDFToolsOpen(true)}
                   onMouseLeave={() => setIsPDFToolsOpen(false)}
-                  role="menu"
-                  className="absolute top-full left-0 mt-1 w-72 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 py-2 animate-in fade-in slide-in-from-top-2"
+                  aria-expanded={isPDFToolsOpen}
+                  aria-haspopup="true"
+                  aria-label="PDF Tools Menu"
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all cursor-pointer"
                 >
-                  {pdfTools.map((tool) => (
-                    <Link
-                      key={tool.href}
-                      href={tool.href}
-                      role="menuitem"
-                      className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
-                    >
-                      <tool.icon aria-hidden="true" className="w-5 h-5 text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-semibold text-gray-950 dark:text-white">
-                          {tool.name}
-                        </div>
-                        <div className="text-xs font-medium text-gray-800 dark:text-gray-200">
-                          {tool.description}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
+                  <span>PDF Tools</span>
+                  <ChevronDownIcon
+                    aria-hidden="true"
+                    className={`w-4 h-4 transition-transform ${isPDFToolsOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {/* Desktop Dropdown Menu */}
+                {isPDFToolsOpen && (
+                  <div
+                    onMouseEnter={() => setIsPDFToolsOpen(true)}
+                    onMouseLeave={() => setIsPDFToolsOpen(false)}
+                    role="menu"
+                    className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 p-2 animate-in fade-in slide-in-from-top-2 z-50 space-y-1"
+                  >
+                    {pdfTools.map((tool) => (
+                      <Link
+                        key={tool.href}
+                        href={tool.href}
+                        role="menuitem"
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-800 text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-semibold text-sm transition-colors group"
+                      >
+                        <tool.icon
+                          aria-hidden="true"
+                          className="w-4 h-4 text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 shrink-0"
+                        />
+                        <span className="truncate">{tool.name}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
+          </div>
 
-            {/* Desktop Theme Toggle */}
+          {/* Right: Desktop Theme Toggle & Get Started Button */}
+          <div className="hidden lg:flex items-center gap-3">
             <ThemeToggle />
-
-            {/* Desktop Get Started Button */}
             <Link
               href="/converter"
-              className="ml-2 px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm hover:shadow-md"
+              className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm hover:shadow-md"
             >
               Get Started
             </Link>
@@ -259,13 +245,23 @@ export default function Header() {
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-              aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-label={
+                isMobileMenuOpen
+                  ? "Close navigation menu"
+                  : "Open navigation menu"
+              }
               aria-expanded={isMobileMenuOpen}
             >
               {isMobileMenuOpen ? (
-                <XMarkIcon aria-hidden="true" className="w-6 h-6 text-gray-950 dark:text-white" />
+                <XMarkIcon
+                  aria-hidden="true"
+                  className="w-6 h-6 text-gray-950 dark:text-white"
+                />
               ) : (
-                <Bars3Icon aria-hidden="true" className="w-6 h-6 text-gray-950 dark:text-white" />
+                <Bars3Icon
+                  aria-hidden="true"
+                  className="w-6 h-6 text-gray-950 dark:text-white"
+                />
               )}
             </button>
           </div>
@@ -300,7 +296,10 @@ export default function Header() {
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
               aria-label="Close navigation menu"
             >
-              <XMarkIcon aria-hidden="true" className="w-5 h-5 text-gray-950 dark:text-white" />
+              <XMarkIcon
+                aria-hidden="true"
+                className="w-5 h-5 text-gray-950 dark:text-white"
+              />
             </button>
           </div>
 
@@ -317,8 +316,13 @@ export default function Header() {
                 className="flex items-center justify-between w-full px-4 py-3 text-left font-semibold text-gray-950 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               >
                 <div className="flex items-center gap-2.5">
-                  <PhotoIcon aria-hidden="true" className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  <span className="font-semibold text-gray-950 dark:text-white">Image Tools</span>
+                  <PhotoIcon
+                    aria-hidden="true"
+                    className="w-5 h-5 text-blue-600 dark:text-blue-400"
+                  />
+                  <span className="font-semibold text-gray-950 dark:text-white">
+                    Image Tools
+                  </span>
                 </div>
                 <ChevronDownIcon
                   aria-hidden="true"
@@ -326,25 +330,21 @@ export default function Header() {
                 />
               </button>
 
-              {/* Mobile Image Tools Submenu */}
+              {/* Mobile Image Tools Submenu: 2 columns without description */}
               {isMobileImageToolsOpen && (
-                <div className="mt-2 ml-4 space-y-1">
+                <div className="mt-2 grid grid-cols-2 gap-1.5 p-1">
                   {imageTools.map((tool) => (
                     <Link
                       key={tool.href}
                       href={tool.href}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg transition-colors"
+                      className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 dark:bg-gray-800/60 rounded-lg border border-gray-100 dark:border-gray-800 text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-xs font-semibold transition-colors"
                     >
-                      <tool.icon aria-hidden="true" className="w-5 h-5 text-gray-700 dark:text-gray-300 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-semibold text-gray-950 dark:text-white">
-                          {tool.name}
-                        </div>
-                        <div className="text-xs font-medium text-gray-800 dark:text-gray-200">
-                          {tool.description}
-                        </div>
-                      </div>
+                      <tool.icon
+                        aria-hidden="true"
+                        className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0"
+                      />
+                      <span className="truncate">{tool.name}</span>
                     </Link>
                   ))}
                 </div>
@@ -360,8 +360,13 @@ export default function Header() {
                 className="flex items-center justify-between w-full px-4 py-3 text-left font-semibold text-gray-950 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               >
                 <div className="flex items-center gap-2.5">
-                  <DocumentIcon aria-hidden="true" className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  <span className="font-semibold text-gray-950 dark:text-white">PDF Tools</span>
+                  <DocumentIcon
+                    aria-hidden="true"
+                    className="w-5 h-5 text-blue-600 dark:text-blue-400"
+                  />
+                  <span className="font-semibold text-gray-950 dark:text-white">
+                    PDF Tools
+                  </span>
                 </div>
                 <ChevronDownIcon
                   aria-hidden="true"
@@ -369,25 +374,21 @@ export default function Header() {
                 />
               </button>
 
-              {/* Mobile PDF Tools Submenu */}
+              {/* Mobile PDF Tools Submenu: 2 columns without description */}
               {isMobilePDFToolsOpen && (
-                <div className="mt-2 ml-4 space-y-1">
+                <div className="mt-2 grid grid-cols-2 gap-1.5 p-1">
                   {pdfTools.map((tool) => (
                     <Link
                       key={tool.href}
                       href={tool.href}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg transition-colors"
+                      className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 dark:bg-gray-800/60 rounded-lg border border-gray-100 dark:border-gray-800 text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-xs font-semibold transition-colors"
                     >
-                      <tool.icon aria-hidden="true" className="w-5 h-5 text-gray-700 dark:text-gray-300 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-semibold text-gray-950 dark:text-white">
-                          {tool.name}
-                        </div>
-                        <div className="text-xs font-medium text-gray-800 dark:text-gray-200">
-                          {tool.description}
-                        </div>
-                      </div>
+                      <tool.icon
+                        aria-hidden="true"
+                        className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0"
+                      />
+                      <span className="truncate">{tool.name}</span>
                     </Link>
                   ))}
                 </div>
@@ -396,7 +397,9 @@ export default function Header() {
 
             {/* Mobile Theme Toggle Row */}
             <div className="mb-4 pt-4 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between px-2">
-              <span className="font-semibold text-sm text-gray-950 dark:text-white">Theme</span>
+              <span className="font-semibold text-sm text-gray-950 dark:text-white">
+                Theme
+              </span>
               <ThemeToggle />
             </div>
 

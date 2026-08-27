@@ -5,12 +5,13 @@ import HeroSection from "./components/HeroSection";
 import WhyChoose from "./components/WhyChoose";
 
 export const metadata: Metadata = {
-  title: "Home - Image Converter",
+  title: "Free All-in-One Online Image & PDF Tools",
   description:
-    "Convert images to PDF, change formats, and compress images with our free online tools. No installation needed.",
+    "Convert formats, remove backgrounds with AI, upscale, blur faces & text, compress, resize, crop, and convert PDF to images directly in your browser with 100% privacy.",
   openGraph: {
-    title: "Image Converter - Convert Images to PDF & More",
-    description: "Fast and reliable image conversion tools for your needs.",
+    title: "Image Converter - Free All-in-One Online Image & PDF Tools",
+    description:
+      "Fast, secure, and free online tools to convert, edit, and enhance images and PDFs.",
     type: "website",
   },
 };

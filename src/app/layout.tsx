@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 
@@ -7,49 +7,107 @@ const montserrat = Montserrat({
   variable: "--font-montserrat",
 });
 
+const SITE_URL = "https://image-converter-six-beta.vercel.app";
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#111827" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export const metadata: Metadata = {
-  title: "Image Converter - Convert Images to PDF & More",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Image Converter - Free All-in-One Online Image & PDF Tools",
+    template: "%s | Image Converter",
+  },
   description:
-    "Fast and reliable online image converter. Convert images to PDF, change image formats, compress images, and more with our easy-to-use tools.",
+    "Fast, secure, and free online image tools. Convert formats (JPG, PNG, WebP, AVIF, SVG, ICO), remove backgrounds with AI, upscale, blur & censor, compress, resize, crop, and convert PDF to images directly in your browser.",
+  applicationName: "Image Converter",
+  authors: [{ name: "Image Converter Team", url: SITE_URL }],
+  generator: "Next.js",
   keywords: [
     "image converter",
-    "image to pdf",
-    "image to ico",
-    "converter",
-    "online tool",
-    "crop image",
+    "online image converter",
+    "convert jpg to png",
+    "convert png to webp",
+    "convert avif to jpg",
+    "remove background",
+    "ai background remover",
+    "upscale image",
+    "ai image enhancer",
+    "blur image",
+    "censor faces",
+    "blur number plates",
+    "censor text",
+    "compress image",
+    "reduce image size",
     "resize image",
+    "crop image",
     "rotate image",
-    "compressed image",
+    "flip image",
+    "image to ico",
+    "favicon generator",
+    "image to pdf",
+    "pdf to image",
+    "free image editor",
+    "browser image tools",
   ],
-  authors: [{ name: "Image Converter" }],
-  robots: "index, follow",
-
+  creator: "Image Converter",
+  publisher: "Image Converter",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  alternates: {
+    canonical: "/",
+  },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon-32x32.png",
+    apple: "/apple-touch-icon.png",
+  },
   openGraph: {
-    title: "Image Converter - Convert Images to PDF & More",
-    description:
-      "Fast and reliable online image converter. Convert images to PDF, change image formats, compress images, and more.",
-    url: "https://yourdomain.com",
+    type: "website",
+    locale: "en_US",
+    url: SITE_URL,
     siteName: "Image Converter",
+    title: "Image Converter - Free All-in-One Online Image & PDF Tools",
+    description:
+      "Convert formats, remove backgrounds with AI, upscale, blur & censor, compress, resize, crop, and convert PDF to images directly in your browser with 100% privacy.",
     images: [
       {
-        url: "https://yourdomain.com/og-image.png", // absolute URL required
+        url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Image Converter Tool",
+        alt: "Image Converter - Free All-in-One Online Image & PDF Tools",
       },
     ],
-    locale: "en_US",
-    type: "website",
   },
-
   twitter: {
     card: "summary_large_image",
-    title: "Image Converter - Convert Images to PDF & More",
+    title: "Image Converter - Free All-in-One Online Image & PDF Tools",
     description:
-      "Fast and reliable online image converter. Convert images, compress, crop, resize, and more.",
-    images: ["https://yourdomain.com/og-image.png"],
+      "Free online image converter, AI background remover, upscaler, blur & privacy tools, and PDF converter.",
+    images: ["/og-image.jpg"],
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  category: "technology",
 };
 
 export default function RootLayout({

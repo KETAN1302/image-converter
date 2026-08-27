@@ -70,25 +70,6 @@ export default function Footer() {
     { name: "Rotate Image", href: "/rotate", description: "Flip & rotate" },
   ];
 
-  const features = [
-    { name: "100% Free", icon: HeartIcon, description: "No hidden costs" },
-    {
-      name: "Privacy First",
-      icon: ShieldCheckIcon,
-      description: "Files never leave your device",
-    },
-    {
-      name: "Fast Processing",
-      icon: ClockIcon,
-      description: "Process in seconds",
-    },
-    {
-      name: "Mobile Friendly",
-      icon: DevicePhoneMobileIcon,
-      description: "Works on all devices",
-    },
-  ];
-
   const socialLinks = [
     {
       href: "https://twitter.com",
@@ -239,7 +220,7 @@ export default function Footer() {
           variants={containerVariants}
           initial="hidden"
           animate={isVisible ? "visible" : "hidden"}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-8"
         >
           {/* Brand Column */}
           <motion.div
@@ -265,34 +246,12 @@ export default function Footer() {
               Simple, fast, and private. Your files stay on your device. No
               uploads, no servers, complete privacy.
             </motion.p>
-            <motion.div variants={itemVariants} className="flex gap-3">
-              {features.map((feature) => (
-                <motion.div
-                  key={feature.name}
-                  variants={featureIconVariants}
-                  whileHover="hover"
-                  className="group relative"
-                  title={feature.description}
-                >
-                  <feature.icon aria-hidden="true" className="w-5 h-5 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-help" />
-                  {/* Tooltip */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    whileHover={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1 bg-gray-950 dark:bg-gray-800 text-white text-xs font-medium rounded whitespace-nowrap pointer-events-none z-10"
-                  >
-                    {feature.name}: {feature.description}
-                  </motion.div>
-                </motion.div>
-              ))}
-            </motion.div>
           </motion.div>
 
           {/* Tools Column (Two Columns) */}
           <motion.div
             variants={itemVariants}
-            className="col-span-1 md:col-span-2 lg:col-span-2"
+            className="col-span-1 md:col-span-3 lg:col-span-3"
           >
             <motion.h2
               variants={itemVariants}
@@ -300,7 +259,7 @@ export default function Footer() {
             >
               Image Tools
             </motion.h2>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
+            <ul className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2.5">
               {tools.map((tool) => (
                 <motion.li
                   key={tool.href}
@@ -317,7 +276,10 @@ export default function Footer() {
                       whileHover={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <ArrowTopRightOnSquareIcon aria-hidden="true" className="w-3.5 h-3.5" />
+                      <ArrowTopRightOnSquareIcon
+                        aria-hidden="true"
+                        className="w-3.5 h-3.5"
+                      />
                     </motion.div>
                   </Link>
                 </motion.li>
@@ -390,7 +352,10 @@ export default function Footer() {
                 animate="animate"
                 className="inline-block"
               >
-                <HeartIcon aria-hidden="true" className="w-3.5 h-3.5 inline-block text-red-500 mx-0.5" />
+                <HeartIcon
+                  aria-hidden="true"
+                  className="w-3.5 h-3.5 inline-block text-red-500 mx-0.5"
+                />
               </motion.span>{" "}
               for the community.
             </span>
