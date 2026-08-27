@@ -4,6 +4,7 @@ import { useState, DragEvent, useRef, useEffect } from "react";
 import NextImage from "next/image";
 import {
   ArrowDownTrayIcon,
+  ArrowLeftIcon,
   XMarkIcon,
   PhotoIcon,
   CloudArrowUpIcon,
@@ -11,6 +12,8 @@ import {
   ExclamationCircleIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import ThemeToggle from "../components/ThemeToggle";
 
 interface ConvertedFile {
   name: string;
@@ -297,7 +300,7 @@ export default function Home() {
         });
       }, tickMs);
 
-      const res = await fetch("/API/convert", {
+      const res = await fetch("/api/convert", {
         method: "POST",
         body: formData,
       });
@@ -316,18 +319,35 @@ export default function Home() {
             const base64Data = file.data.split(",")[1] || file.data;
             const sizeInBytes = Math.round((base64Data.length * 3) / 4);
 
-            // Get image dimensions
-            const img = new Image();
-            await new Promise((resolve) => {
-              img.onload = resolve;
-              img.src = file.data;
-            });
+            // Get image dimensions safely
+            let width: number | undefined = undefined;
+            let height: number | undefined = undefined;
+
+            try {
+              const img = new Image();
+              await new Promise<void>((resolve) => {
+                const timer = setTimeout(() => resolve(), 600);
+                img.onload = () => {
+                  clearTimeout(timer);
+                  width = img.width;
+                  height = img.height;
+                  resolve();
+                };
+                img.onerror = () => {
+                  clearTimeout(timer);
+                  resolve();
+                };
+                img.src = file.preview || file.data;
+              });
+            } catch {
+              // Ignore dimension decode errors
+            }
 
             return {
               ...file,
               size: sizeInBytes,
-              width: img.width,
-              height: img.height,
+              width,
+              height,
             };
           }),
         );
@@ -373,14 +393,26 @@ export default function Home() {
   return (
     <main className="min-h-screen">
       {/* Header */}
-      <div className="sticky top-0 z-10 backdrop-blur-md border-b border-gray-200 px-4 py-3">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-xl md:text-4xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Image Converter
-          </h1>
-          <p className="text-xs md:text-base text-gray-600 dark:text-white">
-            Convert and optimize your images
-          </p>
+      <div className="sticky top-0 z-10 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-xl md:text-4xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Image Converter
+            </h1>
+            <p className="font-medium text-xs md:text-sm text-gray-950 dark:text-white">
+              Convert and optimize your images
+            </p>
+          </div>
+          <div className="flex items-center gap-2 md:gap-3">
+            <ThemeToggle />
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 text-sm font-semibold text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              <ArrowLeftIcon className="w-4 h-4" />
+              <span>Home</span>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -394,25 +426,26 @@ export default function Home() {
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
             className={`
-              relative w-full p-6 md:p-8 mb-4 border-3 border-dashed rounded
+              relative w-full p-6 md:p-8 mb-4 border-3 border-dashed rounded-2xl
               transition-all duration-300 cursor-pointer
               ${
                 isDragging
-                  ? "border-blue-500 bg-blue-50 scale-102 shadow-lg"
-                  : "border-gray-300 dark:border-gray-700 hover:border-gray-400 bg-white dark:bg-gray-900 hover:shadow-md"
+                  ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-102 shadow-lg"
+                  : "border-gray-300 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-gray-900 hover:shadow-md"
               }
             `}
           >
             <div className="text-center">
               <CloudArrowUpIcon
+                aria-hidden="true"
                 className={`w-12 h-12 md:w-20 md:h-20 mx-auto mb-2 md:mb-4 transition-all duration-300 ${
                   isDragging
                     ? "text-blue-500 scale-110"
-                    : "text-gray-400 dark:text-white"
+                    : "text-gray-500 dark:text-gray-400"
                 }`}
               />
 
-              <p className="text-base md:text-xl font-semibold text-gray-700 dark:text-white mb-1 md:mb-2">
+              <p className="text-base md:text-xl font-bold text-gray-950 dark:text-white mb-1 md:mb-2">
                 {isDragging
                   ? "Drop here"
                   : isMobile
@@ -420,7 +453,7 @@ export default function Home() {
                     : "Drag & drop here"}
               </p>
 
-              <p className="text-xs md:text-sm text-gray-500 dark:text-white mb-3 md:mb-4">
+              <p className="text-xs md:text-sm font-medium text-gray-950 dark:text-white mb-3 md:mb-4">
                 Supports: JPG, PNG, WebP, AVIF, GIF, SVG, HEIC, TIFF
               </p>
 
@@ -428,16 +461,17 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row justify-center gap-2 md:gap-3">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 text-white text-sm md:text-base rounded active:bg-blue-700 hover:bg-blue-700 transition-colors shadow-md active:shadow-lg"
+                  className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 text-white text-sm md:text-base font-semibold rounded-xl active:bg-blue-700 hover:bg-blue-700 transition-colors shadow-md active:shadow-lg"
                 >
-                  <PhotoIcon className="w-4 h-4 md:w-5 md:h-5" />
+                  <PhotoIcon aria-hidden="true" className="w-4 h-4 md:w-5 md:h-5" />
                   Select Images
                 </button>
                 <button
                   onClick={() => folderInputRef.current?.click()}
-                  className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-purple-600 text-white text-sm md:text-base rounded active:bg-purple-700 hover:bg-purple-700 transition-colors shadow-md active:shadow-lg"
+                  className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-purple-600 text-white text-sm md:text-base font-semibold rounded-xl active:bg-purple-700 hover:bg-purple-700 transition-colors shadow-md active:shadow-lg"
                 >
                   <svg
+                    aria-hidden="true"
                     className="w-4 h-4 md:w-5 md:h-5"
                     fill="none"
                     stroke="currentColor"
@@ -461,6 +495,7 @@ export default function Home() {
             ref={fileInputRef}
             type="file"
             multiple
+            aria-label="Select image files"
             accept="image/*,.heic,.heif,.svg,.tiff,.tif"
             className="hidden"
             onChange={handleFileSelect}
@@ -469,6 +504,7 @@ export default function Home() {
             ref={folderInputRef}
             type="file"
             multiple
+            aria-label="Select folder of image files"
             {...({ webkitdirectory: "", directory: "" } as DirectoryInputProps)}
             className="hidden"
             onChange={handleFolderSelect}
@@ -477,13 +513,13 @@ export default function Home() {
 
         {/* Error Display */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded flex items-start gap-3">
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded flex items-start gap-3">
             <ExclamationCircleIcon className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm text-red-700">{error}</p>
+              <p className="text-sm font-semibold text-red-700 dark:text-red-300">{error}</p>
               <button
                 onClick={() => setError(null)}
-                className="text-xs text-red-600 hover:text-red-800 mt-1"
+                className="text-xs font-semibold text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 mt-1"
               >
                 Dismiss
               </button>
@@ -496,7 +532,7 @@ export default function Home() {
           <div className="mb-4 md:mb-6">
             <div className="p-4 md:p-6 bg-white dark:bg-gray-900 rounded shadow-sm border-2 border-blue-100 dark:border-gray-700">
               <div className="flex items-center mb-3 md:mb-4">
-                <h2 className="text-base md:text-lg font-semibold text-gray-700 dark:text-white flex items-center gap-2">
+                <h2 className="text-base md:text-lg font-bold text-gray-950 dark:text-white flex items-center gap-2">
                   <span className="w-1 h-5 md:h-6 bg-blue-600 rounded-full"></span>
                   Conversion Options
                 </h2>
@@ -507,13 +543,15 @@ export default function Home() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   {/* Format Selection */}
                   <div>
-                    <label className="block text-xs md:text-sm font-medium text-gray-600 dark:text-white mb-1 md:mb-2">
+                    <label htmlFor="output-format" className="block text-xs md:text-sm font-semibold text-gray-950 dark:text-white mb-1 md:mb-2">
                       Output Format
                     </label>
                     <select
+                      id="output-format"
+                      aria-label="Output Format"
                       value={format}
                       onChange={(e) => setFormat(e.target.value)}
-                      className="w-full border border-gray-300 dark:border-gray-700 rounded p-2.5 md:p-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white dark:bg-gray-800"
+                      className="w-full border border-gray-300 dark:border-gray-700 rounded p-2.5 md:p-3 text-sm md:text-base font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white dark:bg-gray-800 text-gray-950 dark:text-white"
                     >
                       <option value="png">PNG - Lossless</option>
                       <option value="jpg">JPG - Best for photos</option>
@@ -532,22 +570,24 @@ export default function Home() {
                   {/* Quality Slider */}
                   <div>
                     <div className="flex justify-between items-center mb-1">
-                      <label className="text-xs md:text-sm font-medium text-gray-600 dark:text-white">
+                      <label htmlFor="quality-slider" className="text-xs md:text-sm font-semibold text-gray-950 dark:text-white">
                         Quality
                       </label>
-                      <span className="text-xs md:text-sm bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">
+                      <span className="text-xs md:text-sm bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded-full font-bold">
                         {quality}%
                       </span>
                     </div>
                     <input
+                      id="quality-slider"
                       type="range"
+                      aria-label="Quality Adjustment"
                       min="1"
                       max="100"
                       value={quality}
                       onChange={(e) => setQuality(e.target.value)}
-                      className="w-full h-2 bg-gray-200 rounded appearance-none cursor-pointer accent-blue-600"
+                      className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded appearance-none cursor-pointer accent-blue-600"
                     />
-                    <div className="flex justify-between text-xs text-gray-500 dark:text-white mt-1">
+                    <div className="flex justify-between text-xs font-medium text-gray-950 dark:text-white mt-1">
                       <span>Small file</span>
                       <span>High quality</span>
                     </div>
@@ -556,38 +596,42 @@ export default function Home() {
 
                 {/* Dimensions */}
                 <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-                  <h3 className="text-sm font-medium text-gray-600 dark:text-white mb-3">
+                  <h3 className="text-sm font-semibold text-gray-950 dark:text-white mb-3">
                     Dimensions (Optional)
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs text-gray-500 dark:text-white mb-1">
+                      <label htmlFor="width-input" className="block text-xs font-medium text-gray-950 dark:text-white mb-1">
                         Width (px)
                       </label>
                       <input
+                        id="width-input"
                         type="number"
                         min="1"
+                        aria-label="Target width in pixels"
                         placeholder="Auto"
                         value={width}
                         onChange={(e) => setWidth(e.target.value)}
-                        className="w-full border border-gray-300 rounded p-2.5 md:p-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white rounded p-2.5 md:p-3 text-sm md:text-base font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 dark:text-white mb-1">
+                      <label htmlFor="height-input" className="block text-xs font-medium text-gray-950 dark:text-white mb-1">
                         Height (px)
                       </label>
                       <input
+                        id="height-input"
                         type="number"
                         min="1"
+                        aria-label="Target height in pixels"
                         placeholder="Auto"
                         value={height}
                         onChange={(e) => setHeight(e.target.value)}
-                        className="w-full border border-gray-300 rounded p-2.5 md:p-3 text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white rounded p-2.5 md:p-3 text-sm md:text-base font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                       />
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-white mt-2">
+                  <p className="text-xs font-medium text-gray-950 dark:text-white mt-2">
                     Leave empty to maintain original aspect ratio
                   </p>
                 </div>
@@ -598,15 +642,15 @@ export default function Home() {
 
         {/* Selected Files Preview */}
         {files.length > 0 && (
-          <div className="mb-4 md:mb-6 p-4 md:p-6 bg-white dark:bg-gray-900 rounded-xl shadow-sm">
+          <div className="mb-4 md:mb-6 p-4 md:p-6 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
             <div className="flex justify-between items-center mb-3 md:mb-4">
-              <h2 className="text-base md:text-lg font-semibold text-gray-700 dark:text-white flex items-center gap-2">
+              <h2 className="text-base md:text-lg font-bold text-gray-950 dark:text-white flex items-center gap-2">
                 <span className="w-1 h-5 md:h-6 bg-green-600 rounded-full"></span>
                 Selected Files ({files.length})
               </h2>
               <button
                 onClick={clearAllFiles}
-                className="text-xs md:text-sm text-red-600 hover:text-red-700 transition-colors"
+                className="text-xs md:text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-bold transition-colors"
               >
                 Clear All
               </button>
@@ -620,16 +664,16 @@ export default function Home() {
                   className="flex items-center gap-2 md:gap-4 p-2 md:p-3 bg-gray-50 dark:bg-gray-800 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   {/* Thumbnail */}
-                  <div className="w-12 h-12 md:w-16 md:h-16 rounded overflow-hidden bg-gray-200 border border-gray-300 shrink-0 relative">
+                  <div className="w-12 h-12 md:w-16 md:h-16 rounded overflow-hidden bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 shrink-0 relative">
                     <FilePreviewImage file={file} />
                   </div>
 
                   {/* File Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs md:text-sm font-medium text-gray-700 dark:text-white truncate">
+                    <p className="text-xs md:text-sm font-semibold text-gray-950 dark:text-white truncate">
                       {file.name}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-white">
+                    <p className="text-xs font-medium text-gray-950 dark:text-white">
                       {formatFileSize(file.size)}
                     </p>
 
@@ -638,7 +682,7 @@ export default function Home() {
                       uploadProgress[file.name] < 100 && (
                         <div className="mt-1 md:mt-2">
                           <div className="flex items-center gap-1 md:gap-2">
-                            <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                               <div
                                 className="h-full bg-blue-600 rounded-full transition-all duration-300"
                                 style={{
@@ -646,7 +690,7 @@ export default function Home() {
                                 }}
                               />
                             </div>
-                            <span className="text-xs text-gray-600">
+                            <span className="text-xs font-semibold text-gray-950 dark:text-white">
                               {uploadProgress[file.name]}%
                             </span>
                           </div>
@@ -656,8 +700,8 @@ export default function Home() {
                     {/* Upload Complete */}
                     {uploadProgress[file.name] === 100 && (
                       <div className="flex items-center gap-1 mt-1">
-                        <CheckCircleIcon className="w-3 h-3 md:w-4 md:h-4 text-green-500" />
-                        <span className="text-xs text-green-600">Ready</span>
+                        <CheckCircleIcon className="w-3.5 h-3.5 md:w-4 md:h-4 text-green-500" />
+                        <span className="text-xs text-green-700 dark:text-green-400 font-semibold">Ready</span>
                       </div>
                     )}
                   </div>
@@ -665,9 +709,10 @@ export default function Home() {
                   {/* Remove Button */}
                   <button
                     onClick={() => removeFile(index)}
-                    className="p-1.5 md:p-2 text-gray-400 dark:text-white hover:text-red-500 transition-colors rounded-full hover:bg-red-50 dark:hover:bg-gray-800"
+                    aria-label={`Remove ${file.name}`}
+                    className="p-1.5 md:p-2 text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-full hover:bg-red-50 dark:hover:bg-gray-800"
                   >
-                    <XMarkIcon className="w-4 h-4 md:w-5 md:h-5" />
+                    <XMarkIcon aria-hidden="true" className="w-4 h-4 md:w-5 md:h-5" />
                   </button>
                 </div>
               ))}
@@ -681,13 +726,13 @@ export default function Home() {
             onClick={handleConvert}
             disabled={files.length === 0 || isConverting}
             className={`
-            w-full py-3 rounded font-semibold text-base md:text-lg
+            w-full py-3.5 rounded font-bold text-base md:text-lg
             transition-all duration-200 active:scale-98 hover:scale-102
-            flex items-center justify-center gap-2
+            flex items-center justify-center gap-2 shadow-md
             ${
               files.length > 0 && !isConverting
-                ? "bg-blue-600 text-white hover:shadow-lg"
-                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                ? "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg"
+                : "bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed"
             }
           `}
           >
@@ -698,7 +743,7 @@ export default function Home() {
               </>
             ) : (
               <>
-                <ArrowDownTrayIcon className="w-4 h-4 md:w-5 md:h-5" />
+                <ArrowDownTrayIcon aria-hidden="true" className="w-5 h-5" />
                 <span>
                   {files.length > 0
                     ? `Convert ${files.length} ${files.length === 1 ? "Image" : "Images"}`
@@ -712,7 +757,7 @@ export default function Home() {
         {/* Results */}
         {results.length > 0 && (
           <div className="mt-6 md:mt-8">
-            <h2 className="text-lg md:text-xl font-semibold text-gray-700 dark:text-white mb-3 md:mb-4 flex items-center gap-2">
+            <h2 className="text-lg md:text-xl font-bold text-gray-950 dark:text-white mb-3 md:mb-4 flex items-center gap-2">
               <span className="w-1 h-5 md:h-6 bg-purple-600 rounded-full"></span>
               Converted Images
             </h2>
@@ -731,7 +776,7 @@ export default function Home() {
                     className="bg-white dark:bg-gray-900 rounded shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow"
                   >
                     {/* Image Container */}
-                    <div className="aspect-video bg-gray-100 relative group">
+                    <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative group">
                       <NextImage
                         src={file.preview || file.data}
                         alt={file.name}
@@ -744,10 +789,11 @@ export default function Home() {
                       <a
                         href={file.data}
                         download={file.name}
+                        aria-label={`Download ${file.name}`}
                         className="absolute inset-0 bg-black/20 bg-opacity-0 hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center group"
                       >
                         <div className="bg-white rounded-full p-3 opacity-0 group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all duration-200 shadow-lg">
-                          <ArrowDownTrayIcon className="w-5 h-5 text-gray-700" />
+                          <ArrowDownTrayIcon aria-hidden="true" className="w-5 h-5 text-gray-950" />
                         </div>
                       </a>
                     </div>
@@ -757,12 +803,12 @@ export default function Home() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <p
-                            className="text-sm font-medium text-gray-700 dark:text-white truncate"
+                            className="text-sm font-semibold text-gray-950 dark:text-white truncate"
                             title={file.name}
                           >
                             {file.name}
                           </p>
-                          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-white  mt-1">
+                          <div className="flex items-center gap-2 text-xs font-medium text-gray-950 dark:text-white mt-1">
                             <span>{formatFileSize(file.size)}</span>
                             {file.width && file.height && (
                               <>
@@ -777,15 +823,15 @@ export default function Home() {
                           {/* Size Comparison */}
                           {savings && (
                             <div className="mt-2 flex items-center gap-2">
-                              <DocumentTextIcon className="w-3 h-3 text-gray-400 dark:text-white" />
+                              <DocumentTextIcon aria-hidden="true" className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />
                               <span
-                                className={`text-xs font-medium ${savings.isReduced ? "text-green-600" : "text-orange-600"}`}
+                                className={`text-xs font-bold ${savings.isReduced ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"}`}
                               >
                                 {savings.isReduced ? "↓" : "↑"}{" "}
                                 {Math.abs(Number(savings.percentage))}%
                               </span>
                               {originalFile && (
-                                <span className="text-xs text-gray-400 dark:text-white">
+                                <span className="text-xs font-medium text-gray-950 dark:text-white">
                                   from {formatFileSize(originalFile.size)}
                                 </span>
                               )}
@@ -797,10 +843,11 @@ export default function Home() {
                         <a
                           href={file.data}
                           download={file.name}
-                          className="shrink-0 p-2 text-gray-400 dark:text-white hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          aria-label={`Download ${file.name}`}
+                          className="shrink-0 p-2 text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-800 rounded transition-colors"
                           title="Download"
                         >
-                          <ArrowDownTrayIcon className="w-4 h-4" />
+                          <ArrowDownTrayIcon aria-hidden="true" className="w-4 h-4" />
                         </a>
                       </div>
                     </div>
@@ -820,9 +867,9 @@ export default function Home() {
                     link.click();
                   });
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white text-sm font-semibold rounded hover:bg-green-700 transition-colors shadow-md"
               >
-                <ArrowDownTrayIcon className="w-4 h-4" />
+                <ArrowDownTrayIcon aria-hidden="true" className="w-4 h-4" />
                 Download All ({results.length})
               </button>
             </div>

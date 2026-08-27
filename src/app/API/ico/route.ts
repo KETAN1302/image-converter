@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import toIco from "to-ico";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
@@ -21,9 +23,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (file.size > 4 * 1024 * 1024) {
+    if (file.size > 10 * 1024 * 1024) {
       return NextResponse.json(
-        { error: "File must be smaller than 4MB" },
+        { error: "File must be smaller than 10MB" },
         { status: 400 }
       );
     }
@@ -57,20 +59,21 @@ export async function POST(req: NextRequest) {
     const images = await Promise.all(
       sizes.map(async (size) => {
         try {
-          // First, ensure we have RGBA with transparency
+          // Ensure alpha channel and clean transparency
           const imageBuffer = await sharp(buffer)
+            .rotate()
             .resize(size, size, {
               fit: "contain",
               background: { r: 0, g: 0, b: 0, alpha: 0 },
-              withoutEnlargement: false
+              withoutEnlargement: false,
             })
-            .ensureAlpha() // Ensure alpha channel exists
-            .toColorspace('srgb')
+            .ensureAlpha()
+            .toColorspace("srgb")
             .png({
               compressionLevel: 9,
               palette: false,
               quality: 100,
-              force: true
+              force: true,
             })
             .toBuffer();
 
@@ -101,8 +104,21 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("ICO conversion error:", error);
     return NextResponse.json(
-      { error: "ICO conversion failed. Please check your image and try again." },
+      {
+        error:
+          "ICO conversion failed: " +
+          (error instanceof Error ? error.message : "Please check your image and try again."),
+      },
       { status: 500 }
     );
   }
+}
+
+export async function GET() {
+  return NextResponse.json({
+    message: "Image to ICO API",
+    version: "1.0",
+    maxDuration: "60s",
+    supportedSizes: [16, 32, 48, 64, 128, 256],
+  });
 }

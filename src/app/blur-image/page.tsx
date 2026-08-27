@@ -1,0 +1,719 @@
+"use client";
+
+import { useState, useRef, DragEvent, useEffect, useCallback } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import ThemeToggle from "../components/ThemeToggle";
+import {
+  CloudArrowUpIcon,
+  ArrowDownTrayIcon,
+  ArrowLeftIcon,
+  ExclamationCircleIcon,
+  TrashIcon,
+  ArrowUturnLeftIcon,
+  EyeSlashIcon,
+  UserIcon,
+  IdentificationIcon,
+  DocumentTextIcon,
+  LockClosedIcon,
+} from "@heroicons/react/24/outline";
+
+type CensorshipStyle = "blur" | "pixelate" | "blackout";
+
+interface BlurRegion {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  style: CensorshipStyle;
+  blurRadius: number;
+  blockSize: number;
+}
+
+export default function BlurImagePage() {
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string>("");
+  const [originalDimensions, setOriginalDimensions] = useState<{ width: number; height: number } | null>(null);
+
+  // Tool settings
+  const [censorStyle, setCensorStyle] = useState<CensorshipStyle>("blur");
+  const [blurIntensity, setBlurIntensity] = useState<number>(25);
+  const [pixelBlockSize, setPixelBlockSize] = useState<number>(16);
+
+  // Regions & History
+  const [regions, setRegions] = useState<BlurRegion[]>([]);
+  const [history, setHistory] = useState<BlurRegion[][]>([]);
+
+  // Canvas interaction
+  const [isDrawing, setIsDrawing] = useState<boolean>(false);
+  const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
+  const [currentBox, setCurrentBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+
+  // Status state
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imgElementRef = useRef<HTMLImageElement | null>(null);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Clean up object URLs
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
+  // Handle Drag & Drop
+  const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    setError(null);
+
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (droppedFile) {
+      handleFileSelected(droppedFile);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      handleFileSelected(selectedFile);
+    }
+  };
+
+  const handleFileSelected = (selectedFile: File) => {
+    if (!selectedFile.type.startsWith("image/")) {
+      setError("Please select a valid image file (JPG, PNG, WebP, etc.).");
+      return;
+    }
+
+    if (selectedFile.size > 50 * 1024 * 1024) {
+      setError("File size exceeds 50MB limit.");
+      return;
+    }
+
+    if (preview) URL.revokeObjectURL(preview);
+
+    setFile(selectedFile);
+    setRegions([]);
+    setHistory([]);
+    setError(null);
+    setUploadProgress(0);
+
+    const objUrl = URL.createObjectURL(selectedFile);
+    setPreview(objUrl);
+
+    // Simulate upload progress
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 25;
+      setUploadProgress(progress);
+      if (progress >= 100) {
+        clearInterval(interval);
+      }
+    }, 50);
+
+    const img = document.createElement("img");
+    img.onload = () => {
+      setOriginalDimensions({
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+      });
+      imgElementRef.current = img;
+    };
+    img.src = objUrl;
+  };
+
+  const clearAll = () => {
+    if (preview) URL.revokeObjectURL(preview);
+    setFile(null);
+    setPreview("");
+    setRegions([]);
+    setHistory([]);
+    setOriginalDimensions(null);
+    setError(null);
+    setUploadProgress(0);
+  };
+
+  // Render canvas with all active blur/pixelate/blackout regions
+  const redrawCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    const img = imgElementRef.current;
+    if (!canvas || !img || !originalDimensions) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    canvas.width = originalDimensions.width;
+    canvas.height = originalDimensions.height;
+
+    // Draw base original image
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+
+    // Apply each censorship region
+    regions.forEach((region) => {
+      ctx.save();
+
+      const { x, y, width, height, style, blurRadius, blockSize } = region;
+      if (width <= 0 || height <= 0) {
+        ctx.restore();
+        return;
+      }
+
+      if (style === "blackout") {
+        ctx.fillStyle = "#0a0a0a";
+        ctx.fillRect(x, y, width, height);
+      } else if (style === "blur") {
+        ctx.beginPath();
+        ctx.rect(x, y, width, height);
+        ctx.clip();
+        ctx.filter = `blur(${blurRadius}px)`;
+        ctx.drawImage(img, 0, 0);
+      } else if (style === "pixelate") {
+        const bSize = Math.max(4, blockSize);
+        const scaledW = Math.max(1, Math.floor(width / bSize));
+        const scaledH = Math.max(1, Math.floor(height / bSize));
+
+        const offCanvas = document.createElement("canvas");
+        offCanvas.width = scaledW;
+        offCanvas.height = scaledH;
+        const offCtx = offCanvas.getContext("2d");
+
+        if (offCtx) {
+          offCtx.imageSmoothingEnabled = true;
+          offCtx.drawImage(img, x, y, width, height, 0, 0, scaledW, scaledH);
+
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(offCanvas, 0, 0, scaledW, scaledH, x, y, width, height);
+        }
+      }
+
+      ctx.restore();
+    });
+
+    // Draw active drawing box outline
+    if (currentBox) {
+      ctx.save();
+      ctx.strokeStyle = "#2563eb";
+      ctx.lineWidth = 3;
+      ctx.setLineDash([6, 6]);
+      ctx.strokeRect(currentBox.x, currentBox.y, currentBox.w, currentBox.h);
+      ctx.fillStyle = "rgba(37, 99, 235, 0.2)";
+      ctx.fillRect(currentBox.x, currentBox.y, currentBox.w, currentBox.h);
+      ctx.restore();
+    }
+  }, [originalDimensions, regions, currentBox]);
+
+  useEffect(() => {
+    redrawCanvas();
+  }, [redrawCanvas]);
+
+  // Canvas Mouse / Touch Coordinates Calculator
+  const getCanvasCoords = (clientX: number, clientY: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas || !originalDimensions) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = originalDimensions.width / rect.width;
+    const scaleY = originalDimensions.height / rect.height;
+
+    const x = Math.max(0, Math.min(originalDimensions.width, (clientX - rect.left) * scaleX));
+    const y = Math.max(0, Math.min(originalDimensions.height, (clientY - rect.top) * scaleY));
+
+    return { x, y };
+  };
+
+  // Pointer Down
+  const handlePointerDown = (clientX: number, clientY: number) => {
+    if (!originalDimensions) return;
+    const { x, y } = getCanvasCoords(clientX, clientY);
+    setIsDrawing(true);
+    setStartPoint({ x, y });
+    setCurrentBox({ x, y, w: 0, h: 0 });
+  };
+
+  // Pointer Move
+  const handlePointerMove = (clientX: number, clientY: number) => {
+    if (!isDrawing || !startPoint || !originalDimensions) return;
+    const { x, y } = getCanvasCoords(clientX, clientY);
+
+    const boxX = Math.min(startPoint.x, x);
+    const boxY = Math.min(startPoint.y, y);
+    const boxW = Math.abs(x - startPoint.x);
+    const boxH = Math.abs(y - startPoint.y);
+    setCurrentBox({ x: boxX, y: boxY, w: boxW, h: boxH });
+  };
+
+  // Pointer Up
+  const handlePointerUp = () => {
+    if (!isDrawing) return;
+    setIsDrawing(false);
+
+    if (currentBox && currentBox.w > 10 && currentBox.h > 10) {
+      const newRegion: BlurRegion = {
+        id: "region-" + Date.now(),
+        x: Math.round(currentBox.x),
+        y: Math.round(currentBox.y),
+        width: Math.round(currentBox.w),
+        height: Math.round(currentBox.h),
+        style: censorStyle,
+        blurRadius: blurIntensity,
+        blockSize: pixelBlockSize,
+      };
+
+      setHistory((prev) => [...prev, regions]);
+      setRegions((prev) => [...prev, newRegion]);
+    }
+
+    setStartPoint(null);
+    setCurrentBox(null);
+  };
+
+  const handleUndo = () => {
+    if (history.length === 0) return;
+    const previous = history[history.length - 1];
+    setRegions(previous);
+    setHistory((prev) => prev.slice(0, prev.length - 1));
+  };
+
+  const removeRegion = (id: string) => {
+    setHistory((prev) => [...prev, regions]);
+    setRegions((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  const downloadImage = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !file) return;
+
+    const dataUrl = canvas.toDataURL("image/png");
+    const nameParts = file.name.split(".");
+    nameParts.pop();
+    const baseName = nameParts.join(".");
+    const downloadName = `${baseName}_blurred.png`;
+
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = downloadName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  };
+
+  return (
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      {/* Header */}
+      <div className="sticky top-0 z-10 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-xl md:text-3xl font-bold bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+              Blur & Censor Image
+            </h1>
+            <p className="font-medium text-xs md:text-sm text-gray-950 dark:text-white">
+              Censor faces, license plates, text, and confidential areas
+            </p>
+          </div>
+          <div className="flex items-center gap-2 md:gap-3">
+            <ThemeToggle />
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 text-sm font-semibold text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              <ArrowLeftIcon className="w-4 h-4" />
+              <span>Home</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 py-4 md:px-8 md:py-8">
+        {/* Error Display */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
+            <ExclamationCircleIcon className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-red-700 dark:text-red-300">{error}</p>
+              <button
+                onClick={() => setError(null)}
+                className="text-xs font-semibold text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 mt-1 cursor-pointer"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Upload Section Dropzone */}
+        {!file && (
+          <div className="mb-4 md:mb-8">
+            <div
+              onDrop={handleDrop}
+              onDragOver={(e) => e.preventDefault()}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              className={`
+                relative w-full p-6 md:p-8 mb-4 border-3 border-dashed rounded-2xl
+                transition-all duration-300 cursor-pointer
+                ${
+                  isDragging
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-102 shadow-lg"
+                    : "border-gray-300 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-gray-900 hover:shadow-md"
+                }
+              `}
+            >
+              <div className="text-center">
+                <CloudArrowUpIcon
+                  aria-hidden="true"
+                  className={`w-12 h-12 md:w-20 md:h-20 mx-auto mb-2 md:mb-4 transition-all duration-300 ${
+                    isDragging
+                      ? "text-blue-500 scale-110"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}
+                />
+                <p className="text-base md:text-xl font-bold text-gray-950 dark:text-white mb-1 md:mb-2">
+                  {isDragging
+                    ? "Drop here"
+                    : isMobile
+                      ? "Tap to upload"
+                      : "Drag & drop here"}
+                </p>
+                <p className="text-xs md:text-sm font-medium text-gray-950 dark:text-white mb-3 md:mb-4">
+                  Supports: JPG, PNG, WebP, GIF, BMP (Max 50MB)
+                </p>
+
+                {/* Upload Button */}
+                <div className="flex flex-col sm:flex-row justify-center gap-2 md:gap-3">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 text-white text-sm md:text-base font-semibold rounded-xl active:bg-blue-700 hover:bg-blue-700 transition-colors shadow-md active:shadow-lg cursor-pointer"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      className="w-4 h-4 md:w-5 md:h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                    <span>Select Image</span>
+                  </button>
+                </div>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                aria-label="Upload image to blur or censor"
+                onChange={handleFileChange}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+            </div>
+
+            {/* Feature Badges */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                {
+                  title: "Blur Faces",
+                  desc: "Select & censor faces",
+                  icon: UserIcon,
+                  iconColor: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30",
+                },
+                {
+                  title: "Number Plates",
+                  desc: "Hide car license plates",
+                  icon: IdentificationIcon,
+                  iconColor: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30",
+                },
+                {
+                  title: "Censor Text",
+                  desc: "Redact confidential data",
+                  icon: DocumentTextIcon,
+                  iconColor: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30",
+                },
+                {
+                  title: "100% Private",
+                  desc: "Runs in your browser",
+                  icon: LockClosedIcon,
+                  iconColor: "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30",
+                },
+              ].map((f, i) => {
+                const IconComponent = f.icon;
+                return (
+                  <div
+                    key={i}
+                    className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3.5 text-center shadow-xs flex flex-col items-center justify-center transition-all hover:border-blue-500/50"
+                  >
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-2 ${f.iconColor}`}>
+                      <IconComponent className="w-5 h-5" />
+                    </div>
+                    <p className="text-xs md:text-sm font-bold text-gray-950 dark:text-white">{f.title}</p>
+                    <p className="text-[11px] font-medium text-gray-700 dark:text-gray-300 mt-0.5">{f.desc}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Editor & Studio when file is loaded */}
+        {file && (
+          <div className="space-y-6">
+            {/* Controls Bar */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 md:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 dark:border-gray-800">
+                <h2 className="text-base md:text-lg font-bold text-gray-950 dark:text-white flex items-center gap-2">
+                  <span className="w-1 h-5 md:h-6 bg-blue-600 rounded-full"></span>
+                  Censor & Blur Settings
+                </h2>
+                <div className="flex items-center gap-2">
+                  {history.length > 0 && (
+                    <button
+                      onClick={handleUndo}
+                      title="Undo last action"
+                      className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-950 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <ArrowUturnLeftIcon className="w-3.5 h-3.5" />
+                      Undo
+                    </button>
+                  )}
+                  <button
+                    onClick={clearAll}
+                    className="text-xs md:text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-bold transition-colors cursor-pointer"
+                  >
+                    Clear All
+                  </button>
+                </div>
+              </div>
+
+              {/* File Info */}
+              <div className="flex items-center gap-4 p-3.5 bg-gray-50 dark:bg-gray-800 rounded-xl mb-5">
+                <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700">
+                  {preview && (
+                    <Image
+                      src={preview}
+                      alt={file.name}
+                      width={56}
+                      height={56}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-950 dark:text-white truncate">
+                    {file.name}
+                  </p>
+                  <p className="text-xs font-medium text-gray-950 dark:text-white">
+                    {originalDimensions ? `${originalDimensions.width} × ${originalDimensions.height}px • ` : ""}
+                    {formatBytes(file.size)}
+                  </p>
+                  {uploadProgress < 100 && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-600 transition-all duration-300"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-semibold text-gray-950 dark:text-white">
+                        {uploadProgress}%
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200">
+                    {regions.length} blurred area{regions.length === 1 ? "" : "s"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Censorship Style Selection */}
+              <div className="mb-5">
+                <label className="block text-xs md:text-sm font-bold text-gray-950 dark:text-white mb-2">
+                  Censorship Style
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: "blur", label: "Gaussian Blur", desc: "Smooth frosted privacy blur" },
+                    { id: "pixelate", label: "Pixelate / Mosaic", desc: "Classic 8-bit censor blocks" },
+                    { id: "blackout", label: "Blackout Box", desc: "Solid black document redaction" },
+                  ].map((style) => (
+                    <button
+                      key={style.id}
+                      type="button"
+                      onClick={() => setCensorStyle(style.id as CensorshipStyle)}
+                      className={`p-2.5 text-center rounded-xl border transition-all cursor-pointer ${
+                        censorStyle === style.id
+                          ? "border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 ring-2 ring-blue-500/20"
+                          : "border-gray-250 dark:border-gray-700 text-gray-950 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
+                      }`}
+                    >
+                      <div className="text-xs md:text-sm font-bold">{style.label}</div>
+                      <div className="text-[11px] opacity-75 font-medium mt-0.5">{style.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sliders for Blur or Pixelation Strength */}
+              {censorStyle !== "blackout" && (
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3.5">
+                  {censorStyle === "blur" && (
+                    <div>
+                      <div className="flex justify-between items-center mb-1 text-xs md:text-sm font-bold text-gray-950 dark:text-white">
+                        <span>Blur Intensity</span>
+                        <span className="text-blue-600 dark:text-blue-400">{blurIntensity}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="5"
+                        max="60"
+                        value={blurIntensity}
+                        onChange={(e) => setBlurIntensity(parseInt(e.target.value))}
+                        className="w-full h-1.5 bg-gray-300 dark:bg-gray-600 rounded appearance-none cursor-pointer accent-blue-600"
+                      />
+                    </div>
+                  )}
+
+                  {censorStyle === "pixelate" && (
+                    <div>
+                      <div className="flex justify-between items-center mb-1 text-xs md:text-sm font-bold text-gray-950 dark:text-white">
+                        <span>Mosaic Block Size</span>
+                        <span className="text-blue-600 dark:text-blue-400">{pixelBlockSize}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="6"
+                        max="40"
+                        value={pixelBlockSize}
+                        onChange={(e) => setPixelBlockSize(parseInt(e.target.value))}
+                        className="w-full h-1.5 bg-gray-300 dark:bg-gray-600 rounded appearance-none cursor-pointer accent-blue-600"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Interactive Canvas Studio */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 md:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-2">
+                  <EyeSlashIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <span className="font-bold text-sm md:text-base text-gray-950 dark:text-white">
+                    Interactive Privacy Canvas
+                  </span>
+                </div>
+                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                  👉 Click & drag anywhere over faces, license plates, or text to blur
+                </p>
+              </div>
+
+              {/* Canvas viewport */}
+              <div className="relative w-full rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 flex items-center justify-center select-none touch-none">
+                <canvas
+                  ref={canvasRef}
+                  onMouseDown={(e) => handlePointerDown(e.clientX, e.clientY)}
+                  onMouseMove={(e) => handlePointerMove(e.clientX, e.clientY)}
+                  onMouseUp={handlePointerUp}
+                  onTouchStart={(e) => {
+                    if (e.touches.length > 0) {
+                      handlePointerDown(e.touches[0].clientX, e.touches[0].clientY);
+                    }
+                  }}
+                  onTouchMove={(e) => {
+                    if (e.touches.length > 0) {
+                      handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
+                    }
+                  }}
+                  onTouchEnd={handlePointerUp}
+                  className="max-h-[600px] w-auto h-auto max-w-full object-contain cursor-crosshair"
+                />
+              </div>
+
+              {/* Active Regions Quick List */}
+              {regions.length > 0 && (
+                <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-bold text-gray-950 dark:text-white">Active Censor Areas:</span>
+                  {regions.map((reg, idx) => (
+                    <div
+                      key={reg.id}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-950 dark:text-white border border-gray-200 dark:border-gray-700"
+                    >
+                      <span>#{idx + 1} ({reg.style})</span>
+                      <button
+                        onClick={() => removeRegion(reg.id)}
+                        className="hover:text-red-500 transition-colors cursor-pointer"
+                        title="Delete this blur box"
+                      >
+                        <TrashIcon className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Download and Action Bar */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={downloadImage}
+                className="flex-1 py-3.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md active:scale-99 transition-all flex items-center justify-center gap-2 cursor-pointer text-sm md:text-base"
+              >
+                <ArrowDownTrayIcon aria-hidden="true" className="w-5 h-5" />
+                <span>Download Blurred Image</span>
+              </button>
+
+              <button
+                onClick={clearAll}
+                className="py-3.5 px-6 bg-gray-200 dark:bg-gray-700 text-gray-950 dark:text-white font-semibold rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors cursor-pointer text-sm"
+              >
+                Blur Another Image
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}

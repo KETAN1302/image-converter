@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import ThemeToggle from "../components/ThemeToggle";
 import {
   CloudArrowUpIcon,
   ArrowDownTrayIcon,
   PhotoIcon,
   Squares2X2Icon,
   PaintBrushIcon,
+  ArrowLeftIcon,
+  ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
 
 export default function Home() {
@@ -19,8 +23,21 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const sizeOptions = [16, 32, 48, 64, 128, 256];
 
@@ -122,13 +139,14 @@ export default function Home() {
     formData.append("bitDepth", bitDepth.toString());
 
     try {
-      const res = await fetch("/API/ico", {
+      const res = await fetch("/api/ico", {
         method: "POST",
         body: formData,
       });
 
       if (!res.ok) {
-        throw new Error("Conversion failed");
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Conversion failed");
       }
 
       const blob = await res.blob();
@@ -142,35 +160,49 @@ export default function Home() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Conversion error:", error);
-      setError("Failed to convert image. Please try again.");
+      const msg = error instanceof Error ? error.message : "Failed to convert image. Please try again.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <div className="sticky top-0 z-10 backdrop-blur-md bg-white/70 dark:bg-gray-900/70 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-xl md:text-4xl font-bold bg-linear-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent">
-            Image to ICO Converter
-          </h1>
-          <p className="text-xs md:text-base text-gray-600 dark:text-gray-400">
-            Convert your images to Windows icon format
-          </p>
+      <div className="sticky top-0 z-10 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-xl md:text-3xl font-bold bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+              Image to ICO Converter
+            </h1>
+            <p className="font-medium text-xs md:text-sm text-gray-950 dark:text-white">
+              Convert your images to Windows icon format
+            </p>
+          </div>
+          <div className="flex items-center gap-2 md:gap-3">
+            <ThemeToggle />
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 text-sm font-semibold text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              <ArrowLeftIcon className="w-4 h-4" />
+              <span>Home</span>
+            </Link>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-4 md:py-8">
+      <div className="max-w-4xl mx-auto px-4 py-4 md:px-8 md:py-8">
         {/* Error Display */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded flex items-start gap-3">
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
+            <ExclamationCircleIcon className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+              <p className="text-sm font-semibold text-red-700 dark:text-red-300">{error}</p>
               <button
                 onClick={() => setError(null)}
-                className="text-xs text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-300 mt-1"
+                className="text-xs font-semibold text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 mt-1"
               >
                 Dismiss
               </button>
@@ -179,48 +211,58 @@ export default function Home() {
         )}
 
         {/* Upload Section */}
-        <div className="mb-6">
+        <div className="mb-4 md:mb-8">
           <div
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
-            className={`relative w-full p-6 md:p-8 border-3 border-dashed rounded transition-all duration-300 cursor-pointer ${
-              isDragging
-                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-102 shadow-lg"
-                : "border-gray-300 dark:border-gray-700 hover:border-gray-400 bg-white dark:bg-gray-900 hover:shadow-md"
-            }`}
+            className={`
+              relative w-full p-6 md:p-8 mb-4 border-3 border-dashed rounded-2xl
+              transition-all duration-300 cursor-pointer
+              ${
+                isDragging
+                  ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-102 shadow-lg"
+                  : "border-gray-300 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-gray-900 hover:shadow-md"
+              }
+            `}
           >
             <div className="text-center">
               <CloudArrowUpIcon
-                className={`w-12 h-12 md:w-20 md:h-20 mx-auto mb-3 md:mb-4 transition-all duration-300 ${
+                aria-hidden="true"
+                className={`w-12 h-12 md:w-20 md:h-20 mx-auto mb-2 md:mb-4 transition-all duration-300 ${
                   isDragging
                     ? "text-blue-500 scale-110"
-                    : "text-gray-400 dark:text-gray-600"
+                    : "text-gray-500 dark:text-gray-400"
                 }`}
               />
-              <p className="text-base md:text-xl font-semibold text-gray-700 dark:text-white mb-1">
+              <p className="text-base md:text-xl font-bold text-gray-950 dark:text-white mb-1 md:mb-2">
                 {isDragging
-                  ? "Drop your image here"
-                  : "Drop your image or click to browse"}
+                  ? "Drop here"
+                  : isMobile
+                    ? "Tap to upload"
+                    : "Drag & drop here"}
               </p>
-              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-6">
+              <p className="text-xs md:text-sm font-medium text-gray-950 dark:text-white mb-3 md:mb-4">
                 Supports: PNG, JPEG, GIF, BMP (Max 4MB)
               </p>
 
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-blue-600 text-white rounded hover:from-blue-700 hover:to-blue-700 transition-colors shadow-md"
-              >
-                <PhotoIcon className="w-5 h-5" />
-                Select Image
-              </button>
+              <div className="flex flex-col sm:flex-row justify-center gap-2 md:gap-3">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 text-white text-sm md:text-base font-semibold rounded-xl active:bg-blue-700 hover:bg-blue-700 transition-colors shadow-md active:shadow-lg"
+                >
+                  <PhotoIcon className="w-4 h-4 md:w-5 md:h-5" />
+                  Select Image
+                </button>
+              </div>
             </div>
 
             <input
               ref={fileInputRef}
               type="file"
               accept="image/png,image/jpeg,image/gif,image/bmp"
+              aria-label="Upload image to convert to ICO"
               onChange={handleFileChange}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
@@ -234,13 +276,13 @@ export default function Home() {
             <div className="space-y-6">
               <div className="bg-white dark:bg-gray-900 rounded shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-base md:text-lg font-semibold text-gray-700 dark:text-white flex items-center gap-2">
+                  <h2 className="text-base md:text-lg font-bold text-gray-950 dark:text-white flex items-center gap-2">
                     <span className="w-1 h-5 md:h-6 bg-blue-600 rounded-full"></span>
                     Image Preview
                   </h2>
                   <button
                     onClick={clearAll}
-                    className="text-xs md:text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
+                    className="text-xs md:text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-bold transition-colors"
                   >
                     Clear
                   </button>
@@ -261,21 +303,21 @@ export default function Home() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-700 dark:text-white truncate">
+                      <p className="text-sm font-semibold text-gray-950 dark:text-white truncate">
                         {file.name}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-xs font-medium text-gray-950 dark:text-white">
                         {(file.size / 1024).toFixed(2)} KB
                       </p>
                       {uploadProgress < 100 && (
                         <div className="mt-2 flex items-center gap-2">
-                          <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                             <div
                               className="h-full bg-linear-to-r from-blue-600 to-blue-600 transition-all duration-300"
                               style={{ width: `${uploadProgress}%` }}
                             />
                           </div>
-                          <span className="text-xs text-gray-600 dark:text-gray-400">
+                          <span className="text-xs font-semibold text-gray-950 dark:text-white">
                             {uploadProgress}%
                           </span>
                         </div>
@@ -287,13 +329,13 @@ export default function Home() {
 
               {/* Bit Depth Section */}
               <div className="bg-linear-to-br from-blue-50 to-blue-50 dark:from-blue-900/20 dark:to-blue-900/20 rounded p-4 md:p-6 border border-blue-100 dark:border-blue-800">
-                <h2 className="text-base md:text-lg font-semibold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+                <h2 className="text-base md:text-lg font-bold text-gray-950 dark:text-white mb-3 flex items-center gap-2">
                   <PaintBrushIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   Color Depth
                 </h2>
                 <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded p-4">
-                  <p className="text-sm text-blue-900 dark:text-blue-300">
-                    <span className="font-semibold text-blue-700 dark:text-blue-400">
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-200">
+                    <span className="font-bold text-blue-800 dark:text-blue-300">
                       32-bit (recommended)
                     </span>{" "}
                     - Supports transparency and 16.7 millions of colors
@@ -307,29 +349,29 @@ export default function Home() {
           {file && (
             <div className="bg-white dark:bg-gray-900 rounded shadow border border-gray-200 dark:border-gray-700 p-4 md:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base md:text-lg font-semibold text-gray-700 dark:text-white flex items-center gap-2">
+                <h2 className="text-base md:text-lg font-bold text-gray-950 dark:text-white flex items-center gap-2">
                   <Squares2X2Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   Icon Sizes
                 </h2>
                 <div className="flex gap-2">
                   <button
                     onClick={handleSelectAll}
-                    className="text-xs px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                    className="text-xs px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/60 font-semibold transition-colors"
                   >
                     Select All
                   </button>
                   <button
                     onClick={handleClearAll}
-                    className="text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                    className="text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-950 dark:text-white rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold transition-colors"
                   >
                     Clear
                   </button>
                 </div>
               </div>
 
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1">
+              <p className="text-xs font-medium text-gray-950 dark:text-white mb-4 flex items-center gap-1">
                 <svg
-                  className="w-4 h-4"
+                  className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -345,57 +387,65 @@ export default function Home() {
               </p>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
-                {sizeOptions.map((size) => (
-                  <label
-                    key={size}
-                    className={`relative flex items-center p-2 border rounded cursor-pointer transition-all ${
-                      selectedSizes.includes(size)
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md"
-                        : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedSizes.includes(size)}
-                      onChange={() => handleSizeToggle(size)}
-                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 mr-3"
-                    />
-                    <div>
-                      <span className="text-sm font-semibold block text-gray-900 dark:text-white">
-                        {size}px
-                      </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {size === 16}
-                        {size === 32}
-                        {size === 48}
-                        {size === 64}
-                        {size === 128}
-                        {size === 256}
-                      </span>
-                    </div>
-                    {selectedSizes.includes(size) && (
-                      <div className="absolute top-2 right-2">
-                        <svg
-                          className="w-4 h-4 text-blue-600"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
+                {sizeOptions.map((size) => {
+                  const sizeLabels: Record<number, string> = {
+                    16: "Favicon",
+                    32: "Browser tab",
+                    48: "Desktop shortcut",
+                    64: "High DPI icon",
+                    128: "Large preview",
+                    256: "Extra large icon",
+                  };
+                  return (
+                    <label
+                      key={size}
+                      className={`relative flex items-center p-2.5 border rounded cursor-pointer transition-all ${
+                        selectedSizes.includes(size)
+                          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md"
+                          : "border-gray-250 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        aria-label={`Include ${size}x${size} pixel icon size`}
+                        checked={selectedSizes.includes(size)}
+                        onChange={() => handleSizeToggle(size)}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 mr-3"
+                      />
+                      <div>
+                        <span className="text-sm font-bold block text-gray-950 dark:text-white">
+                          {size}px
+                        </span>
+                        <span className="text-xs font-medium text-gray-950 dark:text-white">
+                          {sizeLabels[size] || "Standard"}
+                        </span>
                       </div>
-                    )}
-                  </label>
-                ))}
+                      {selectedSizes.includes(size) && (
+                        <div className="absolute top-2 right-2">
+                          <svg
+                            aria-hidden="true"
+                            className="w-4 h-4 text-blue-600 dark:text-blue-400"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                    </label>
+                  );
+                })}
               </div>
 
               {selectedSizes.length === 0 && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-2 mb-4">
-                  <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+                  <p className="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-2">
                     <svg
+                      aria-hidden="true"
                       className="w-4 h-4"
                       fill="none"
                       stroke="currentColor"
@@ -415,7 +465,7 @@ export default function Home() {
 
               {selectedSizes.length > 0 && (
                 <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 mb-4">
-                  <p className="text-sm text-green-700 dark:text-green-400">
+                  <p className="text-sm text-green-700 dark:text-green-400 font-bold">
                     ✓ {selectedSizes.length} size
                     {selectedSizes.length > 1 ? "s" : ""} selected
                   </p>
@@ -426,11 +476,12 @@ export default function Home() {
               <button
                 onClick={handleConvert}
                 disabled={!file || selectedSizes.length === 0 || loading}
-                className="w-full bg-linear-to-r from-blue-600 to-blue-600 text-white py-3 px-6 rounded font-semibold hover:from-blue-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg text-base md:text-lg flex items-center justify-center gap-3"
+                className="w-full bg-linear-to-r from-blue-600 to-blue-600 text-white py-3.5 px-6 rounded font-bold hover:from-blue-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg text-base md:text-lg flex items-center justify-center gap-3"
               >
                 {loading ? (
                   <>
                     <svg
+                      aria-hidden="true"
                       className="animate-spin h-5 w-5 text-white"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -454,30 +505,13 @@ export default function Home() {
                   </>
                 ) : (
                   <>
-                    <ArrowDownTrayIcon className="w-5 h-5" />
+                    <ArrowDownTrayIcon aria-hidden="true" className="w-5 h-5" />
                     Convert to ICO
                   </>
                 )}
               </button>
             </div>
           )}
-        </div>
-
-        {/* Empty State */}
-        {!file && (
-          <div className="text-center py-12">
-            <PhotoIcon className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">
-              Select an image to start converting
-            </p>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-            Your files are processed securely and never stored on our servers.
-          </p>
         </div>
       </div>
     </main>

@@ -2,15 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 
 // Route Segment Config for Next.js 15+
-export const dynamic = "force-dynamic"; // Use dynamic rendering
-export const maxDuration = 60; // Maximum execution time in seconds (for Vercel)
-export const runtime = "nodejs"; // Use Node.js runtime (required for sharp)
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+export const runtime = "nodejs";
 
 // Maximum file size (50MB)
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
-// Maximum number of files
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
 const MAX_FILES = 20;
-// Concurrency for processing files (adjust for CPU availability)
 const CONCURRENCY = 3;
 
 export async function POST(req: NextRequest) {
@@ -19,15 +17,12 @@ export async function POST(req: NextRequest) {
 
     const files = formData.getAll("files") as File[];
     const format = formData.get("format") as string;
-    const width = formData.get("width")
-      ? Number(formData.get("width"))
-      : undefined;
-    const height = formData.get("height")
-      ? Number(formData.get("height"))
-      : undefined;
-    const quality = formData.get("quality")
-      ? Number(formData.get("quality"))
-      : 80;
+    const widthParam = formData.get("width");
+    const heightParam = formData.get("height");
+    const width = widthParam ? Number(widthParam) : undefined;
+    const height = heightParam ? Number(heightParam) : undefined;
+    const qualityParam = formData.get("quality");
+    const quality = qualityParam ? Number(qualityParam) : 80;
 
     // Validate inputs
     if (!files.length) {
@@ -82,7 +77,7 @@ export async function POST(req: NextRequest) {
       try {
         const buffer = Buffer.from(await file.arrayBuffer());
 
-        let image = sharp(buffer);
+        let image = sharp(buffer).rotate();
 
         // Get metadata to check if it's a valid image
         const metadata = await image.metadata();
@@ -108,7 +103,7 @@ export async function POST(req: NextRequest) {
           case "jpg":
           case "jpeg":
             output = await image
-              .jpeg({ quality: Math.min(quality, 100) })
+              .jpeg({ quality: Math.min(quality, 100), mozjpeg: true })
               .toBuffer();
             break;
           case "webp":
@@ -131,9 +126,6 @@ export async function POST(req: NextRequest) {
             break;
           case "heic":
           case "heif":
-            // Sharp doesn't support HEVC encoding natively on most setups due to patents.
-            // But it supports HEIF saving with AV1 compression (AVIF) which produces a fully valid
-            // HEIF container with AV1 compression (.heic/.heif format).
             output = await image
               .heif({ quality: Math.min(quality, 100), compression: "av1" })
               .toBuffer();
@@ -222,7 +214,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Optional: Add configuration for larger responses if needed
 export async function GET() {
   return NextResponse.json({
     message: "Image Converter API",

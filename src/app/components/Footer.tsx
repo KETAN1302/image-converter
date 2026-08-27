@@ -31,6 +31,21 @@ export default function Footer() {
       description: "Convert between formats",
     },
     {
+      name: "Remove Background",
+      href: "/remove-background",
+      description: "AI Background Remover",
+    },
+    {
+      name: "Upscale Image",
+      href: "/upscale",
+      description: "AI Super Resolution",
+    },
+    {
+      name: "Blur & Censor",
+      href: "/blur-image",
+      description: "Blur faces, plates & text",
+    },
+    {
       name: "Image to PDF",
       href: "/image-to-pdf",
       description: "Create PDF from images",
@@ -229,7 +244,7 @@ export default function Footer() {
           {/* Brand Column */}
           <motion.div
             variants={itemVariants}
-            className="col-span-1 lg:col-span-2"
+            className="col-span-1 md:col-span-2 lg:col-span-1"
           >
             <motion.div
               whileHover={{ scale: 1.05 }}
@@ -245,7 +260,7 @@ export default function Footer() {
             </motion.div>
             <motion.p
               variants={itemVariants}
-              className="text-sm text-gray-600 dark:text-gray-400 mt-4 mb-4"
+              className="text-sm font-medium text-gray-950 dark:text-white mt-4 mb-4"
             >
               Simple, fast, and private. Your files stay on your device. No
               uploads, no servers, complete privacy.
@@ -259,13 +274,13 @@ export default function Footer() {
                   className="group relative"
                   title={feature.description}
                 >
-                  <feature.icon className="w-5 h-5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-help" />
+                  <feature.icon aria-hidden="true" className="w-5 h-5 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-help" />
                   {/* Tooltip */}
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     whileHover={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded whitespace-nowrap pointer-events-none z-10"
+                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1 bg-gray-950 dark:bg-gray-800 text-white text-xs font-medium rounded whitespace-nowrap pointer-events-none z-10"
                   >
                     {feature.name}: {feature.description}
                   </motion.div>
@@ -274,19 +289,19 @@ export default function Footer() {
             </motion.div>
           </motion.div>
 
-          {/* Tools Column */}
+          {/* Tools Column (Two Columns) */}
           <motion.div
             variants={itemVariants}
-            className="col-span-1 lg:col-span-1 "
+            className="col-span-1 md:col-span-2 lg:col-span-2"
           >
-            <motion.h3
+            <motion.h2
               variants={itemVariants}
-              className="font-semibold text-gray-900 dark:text-white mb-4"
+              className="text-base font-bold text-gray-950 dark:text-white mb-4"
             >
               Image Tools
-            </motion.h3>
-            <ul className="space-y-2">
-              {tools.slice(0, 8).map((tool) => (
+            </motion.h2>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
+              {tools.map((tool) => (
                 <motion.li
                   key={tool.href}
                   variants={linkVariants}
@@ -294,15 +309,15 @@ export default function Footer() {
                 >
                   <Link
                     href={tool.href}
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1 group"
+                    className="text-sm font-semibold text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1.5 group"
                   >
-                    {tool.name}
+                    <span>{tool.name}</span>
                     <motion.div
                       initial={{ opacity: 0, x: -5 }}
                       whileHover={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <ArrowTopRightOnSquareIcon className="w-3 h-3" />
+                      <ArrowTopRightOnSquareIcon aria-hidden="true" className="w-3.5 h-3.5" />
                     </motion.div>
                   </Link>
                 </motion.li>
@@ -315,12 +330,12 @@ export default function Footer() {
             variants={itemVariants}
             className="col-span-1 lg:col-span-1"
           >
-            <motion.h3
+            <motion.h2
               variants={itemVariants}
-              className="font-semibold text-gray-900 dark:text-white mb-4"
+              className="text-base font-bold text-gray-950 dark:text-white mb-4"
             >
               Quick Links
-            </motion.h3>
+            </motion.h2>
             <ul className="space-y-3">
               {[
                 "About Us",
@@ -336,7 +351,7 @@ export default function Footer() {
                 >
                   <Link
                     href={`/${item.toLowerCase().replace(" ", "-")}`}
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-block"
+                    className="text-sm font-semibold text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-block"
                   >
                     {item}
                   </Link>
@@ -364,10 +379,10 @@ export default function Footer() {
           {/* Copyright */}
           <motion.p
             whileHover={{ scale: 1.02 }}
-            className="text-xs text-gray-500 dark:text-gray-400 text-center md:text-left"
+            className="text-xs font-medium text-gray-800 dark:text-gray-200 text-center md:text-left"
           >
             © {currentYear} ImageConverter. All rights reserved.
-            <span className="block sm:inline sm:ml-1">
+            <span className="block sm:inline sm:ml-1 font-medium">
               Made with{" "}
               <motion.span
                 variants={heartVariants}
@@ -375,7 +390,7 @@ export default function Footer() {
                 animate="animate"
                 className="inline-block"
               >
-                <HeartIcon className="w-3 h-3 inline-block text-red-500 mx-0.5" />
+                <HeartIcon aria-hidden="true" className="w-3.5 h-3.5 inline-block text-red-500 mx-0.5" />
               </motion.span>{" "}
               for the community.
             </span>
@@ -397,8 +412,8 @@ export default function Footer() {
                 variants={socialIconVariants}
                 whileHover="hover"
                 whileTap="tap"
-                className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                aria-label={social.label}
+                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                aria-label={`Visit our ${social.label} profile`}
               >
                 {social.icon}
               </motion.a>
@@ -415,7 +430,7 @@ export default function Footer() {
         >
           <motion.p
             whileHover={{ scale: 1.02 }}
-            className="text-xs text-gray-400 dark:text-gray-600"
+            className="text-xs font-semibold text-gray-800 dark:text-gray-200"
           >
             🔒 Client-side processing • No file uploads • 100% private • Open
             source

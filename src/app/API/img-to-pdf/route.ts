@@ -16,7 +16,9 @@ export async function POST(req: NextRequest) {
     const files = formData.getAll("files") as File[];
     const pageSize = (formData.get("pageSize") as string) || "auto";
     const orientation = (formData.get("orientation") as string) || "auto";
-    const quality = Number(formData.get("quality")) || 85;
+    const qualityParam = formData.get("quality");
+    const parsedQuality = qualityParam ? Number(qualityParam) : 85;
+    const quality = Math.max(1, Math.min(100, isNaN(parsedQuality) ? 85 : parsedQuality));
     const margin = Number(formData.get("margin")) || 0;
 
     // Validation
@@ -42,8 +44,8 @@ export async function POST(req: NextRequest) {
 
     // Create PDF document
     const pdfDoc = await PDFDocument.create();
-    const processedImages = [];
-    const failedImages = [];
+    const processedImages: string[] = [];
+    const failedImages: { name: string; error: string }[] = [];
 
     // Process images in batches
     for (let i = 0; i < files.length; i += BATCH_SIZE) {
@@ -53,45 +55,21 @@ export async function POST(req: NextRequest) {
         batch.map(async (file) => {
           try {
             const buffer = Buffer.from(await file.arrayBuffer());
-            const metadata = await sharp(buffer).metadata();
-
-            // Check if valid image
-            if (!metadata.format || !metadata.width || !metadata.height) {
-              throw new Error("Invalid image format");
-            }
-
-            // Optimize image for PDF
-            let imageBuffer;
-            let imageDimensions = {
-              width: metadata.width || 0,
-              height: metadata.height || 0,
-            };
-
-            // If it's already JPEG, we can use the buffer directly to save CPU and preserve quality.
-            // Otherwise, we convert it to JPEG with sharp.
-            if (file.type === "image/jpeg" || file.type === "image/jpg") {
-              imageBuffer = buffer;
-            } else {
-              // Convert to JPEG with specified quality
-              const encoded = await sharp(buffer)
-                .jpeg({
-                  quality: quality,
-                  mozjpeg: true,
-                  progressive: false,
-                })
-                .toBuffer({ resolveWithObject: true });
-
-              imageBuffer = encoded.data;
-              imageDimensions = {
-                width: encoded.info.width,
-                height: encoded.info.height,
-              };
-            }
+            
+            // Normalize with auto-rotation (EXIF) and convert to JPEG for embedding
+            const encoded = await sharp(buffer)
+              .rotate()
+              .jpeg({
+                quality: quality,
+                mozjpeg: true,
+                progressive: false,
+              })
+              .toBuffer({ resolveWithObject: true });
 
             return {
-              buffer: imageBuffer,
-              width: imageDimensions.width,
-              height: imageDimensions.height,
+              buffer: encoded.data,
+              width: encoded.info.width,
+              height: encoded.info.height,
               name: file.name,
               success: true,
             };
@@ -107,7 +85,7 @@ export async function POST(req: NextRequest) {
 
       // Add successful images to PDF
       for (const result of batchResults) {
-        if (result.success && result.buffer) {
+        if (result.success && result.buffer && result.width && result.height) {
           try {
             const image = await pdfDoc.embedJpg(result.buffer);
 
@@ -142,7 +120,7 @@ export async function POST(req: NextRequest) {
             // Scale image to fit within printable area while maintaining aspect ratio
             const scale = Math.min(
               printableWidth / result.width,
-              printableHeight / result.height
+              printableHeight / result.height,
             );
             const drawWidth = result.width * scale;
             const drawHeight = result.height * scale;
@@ -171,7 +149,7 @@ export async function POST(req: NextRequest) {
             });
           }
         } else if (!result.success) {
-          failedImages.push({ name: result.name, error: result.error });
+          failedImages.push({ name: result.name, error: result.error || "Processing failed" });
         }
       }
     }

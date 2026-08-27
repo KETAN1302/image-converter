@@ -147,16 +147,16 @@ export default function WhyChoose() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12 sm:mb-16"
         >
-          <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-4 py-2 rounded-full mb-4">
-            <SparklesIcon className="w-4 h-4" />
-            <span className="text-sm font-medium">Why developers love us</span>
+          <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 px-4 py-2 rounded-full mb-4">
+            <SparklesIcon aria-hidden="true" className="w-4 h-4 text-blue-700 dark:text-blue-300" />
+            <span className="text-sm font-semibold">Why developers love us</span>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-950 dark:text-white mb-4">
             Everything you need in one place
           </h2>
 
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className="text-lg font-medium text-gray-950 dark:text-white max-w-2xl mx-auto">
             Powerful image processing tools that work entirely in your browser.
             No uploads, no waiting, complete privacy.
           </p>
@@ -189,20 +189,20 @@ export default function WhyChoose() {
                 <div
                   className={`inline-flex p-3 ${feature.bgColor} rounded-xl mb-4 group-hover:scale-110 transition-transform duration-300`}
                 >
-                  <feature.icon className={`w-6 h-6 ${feature.iconColor}`} />
+                  <feature.icon aria-hidden="true" className={`w-6 h-6 ${feature.iconColor}`} />
                 </div>
 
                 {/* Content */}
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                <h3 className="text-lg font-bold text-gray-950 dark:text-white mb-2">
                   {feature.title}
                 </h3>
 
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <p className="text-sm font-medium text-gray-950 dark:text-white mb-4">
                   {feature.description}
                 </p>
 
                 {/* Stats Badge */}
-                <div className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded-full">
+                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-950 dark:text-white bg-gray-100 dark:bg-gray-700 px-2.5 py-1 rounded-full">
                   <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
                   {feature.stats}
                 </div>
@@ -244,7 +244,7 @@ export default function WhyChoose() {
                 <div className="text-3xl sm:text-4xl font-bold text-white mb-2">
                   {stat.value}
                 </div>
-                <div className="text-sm text-gray-300">{stat.label}</div>
+                <div className="text-sm text-gray-100 font-semibold">{stat.label}</div>
               </div>
 
               {/* Progress Bar */}
@@ -270,14 +270,14 @@ export default function WhyChoose() {
           className="mt-12 text-center"
         >
           <div className="inline-flex items-center gap-3 bg-white dark:bg-gray-800 px-6 py-3 rounded-full shadow-sm border border-gray-200 dark:border-gray-700">
-            <CloudArrowUpIcon className="w-5 h-5 text-green-500" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              <span className="font-semibold text-gray-900 dark:text-white">
+            <CloudArrowUpIcon aria-hidden="true" className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <span className="text-sm font-medium text-gray-950 dark:text-white">
+              <span className="font-bold text-gray-950 dark:text-white">
                 1M+
               </span>{" "}
               images processed this month
             </span>
-            <DocumentTextIcon className="w-5 h-5 text-blue-500" />
+            <DocumentTextIcon aria-hidden="true" className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           </div>
         </motion.div>
       </div>

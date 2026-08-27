@@ -11,6 +11,7 @@ import {
   ScissorsIcon,
   ArrowsPointingOutIcon,
   SwatchIcon,
+  EyeSlashIcon,
 } from "@heroicons/react/24/outline";
 import { LiaCompressArrowsAltSolid } from "react-icons/lia";
 import { MdOutlineRotate90DegreesCw } from "react-icons/md";
@@ -23,7 +24,24 @@ export default function HeroSection() {
       label: "Image Converter",
       description: "Convert between image formats",
     },
-
+    {
+      href: "/remove-background",
+      icon: SparklesIcon,
+      label: "Remove Background",
+      description: "AI automatic background remover",
+    },
+    {
+      href: "/upscale",
+      icon: SparklesIcon,
+      label: "Upscale Image",
+      description: "AI super-resolution image enhancer",
+    },
+    {
+      href: "/blur-image",
+      icon: EyeSlashIcon,
+      label: "Blur & Censor",
+      description: "Blur faces, number plates & text",
+    },
     {
       href: "/image-to-pdf",
       icon: DocumentTextIcon,
@@ -171,15 +189,15 @@ export default function HeroSection() {
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-full mb-6 cursor-default"
+            className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-full mb-6 cursor-default border border-blue-100 dark:border-blue-800/40"
           >
             <motion.div
               animate={{ rotate: [0, 10, -10, 0] }}
               transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
             >
-              <SparklesIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <SparklesIcon aria-hidden="true" className="w-4 h-4 text-blue-700 dark:text-blue-300" />
             </motion.div>
-            <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+            <span className="text-sm text-blue-800 dark:text-blue-200 font-semibold">
               Complete Image & PDF Toolkit
             </span>
           </motion.div>
@@ -189,14 +207,14 @@ export default function HeroSection() {
             variants={headingVariants}
             initial="hidden"
             animate="visible"
-            className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-4"
+            className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-950 dark:text-white mb-4"
           >
             Convert & Edit Images{" "}
             <motion.span
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6, type: "spring", stiffness: 100 }}
-              className="text-blue-600 inline-block"
+              className="text-blue-600 dark:text-blue-400 inline-block"
             >
               Effortlessly
             </motion.span>
@@ -207,7 +225,7 @@ export default function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
-            className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-8"
+            className="text-lg font-medium text-gray-950 dark:text-white max-w-2xl mx-auto mb-8"
           >
             Free, fast, and private. Convert, compress, crop, resize, and rotate
             images. Create PDFs from images. No sign-up required.
@@ -227,9 +245,9 @@ export default function HeroSection() {
             >
               <Link
                 href="/converter"
-                className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg shadow-blue-600/20"
+                className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-3.5 rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-lg shadow-blue-600/20"
               >
-                <PhotoIcon className="w-5 h-5" />
+                <PhotoIcon aria-hidden="true" className="w-5 h-5" />
                 Get Started
                 <motion.div
                   animate={{ x: [0, 5, 0] }}
@@ -239,7 +257,7 @@ export default function HeroSection() {
                     repeatDelay: 1,
                   }}
                 >
-                  <ArrowRightIcon className="w-4 h-4" />
+                  <ArrowRightIcon aria-hidden="true" className="w-4 h-4" />
                 </motion.div>
               </Link>
             </motion.div>
@@ -252,9 +270,9 @@ export default function HeroSection() {
             >
               <Link
                 href="/image-to-pdf"
-                className="inline-flex items-center gap-2 bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-white px-8 py-3 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+                className="inline-flex items-center gap-2 bg-gray-200 text-gray-950 dark:bg-gray-700 dark:text-white px-8 py-3.5 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-semibold"
               >
-                <DocumentTextIcon className="w-5 h-5" />
+                <DocumentTextIcon aria-hidden="true" className="w-5 h-5" />
                 Create PDF
               </Link>
             </motion.div>
@@ -299,20 +317,20 @@ export default function HeroSection() {
                         whileHover={{ rotate: 360 }}
                         transition={{ duration: 0.5 }}
                       >
-                        <Icon className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                        <Icon aria-hidden="true" className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                       </motion.div>
                       <motion.div
                         initial={{ x: -10, opacity: 0 }}
                         whileHover={{ x: 0, opacity: 1 }}
                         transition={{ type: "spring", stiffness: 300 }}
                       >
-                        <ArrowRightIcon className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                        <ArrowRightIcon aria-hidden="true" className="w-4 h-4 text-gray-500 group-hover:text-blue-600 transition-colors" />
                       </motion.div>
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    <h2 className="text-lg font-bold text-gray-950 dark:text-white mb-2">
                       {tool.label}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    </h2>
+                    <p className="text-sm font-medium text-gray-950 dark:text-white">
                       {tool.description}
                     </p>
 
