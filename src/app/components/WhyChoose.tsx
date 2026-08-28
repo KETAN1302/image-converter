@@ -153,17 +153,17 @@ export default function WhyChoose() {
                 y: -5,
                 transition: { duration: 0.2 },
               }}
-              className="group relative bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700"
+              className="group relative bg-white dark:bg-gray-800 rounded-md p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700"
             >
               {/* Gradient Border on Hover */}
               <div
-                className={`absolute inset-0 rounded-2xl bg-linear-to-r ${feature.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}
+                className={`absolute inset-0 rounded-md bg-linear-to-r ${feature.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}
               />
 
               <div className="relative">
                 {/* Icon with Gradient Background */}
                 <div
-                  className={`inline-flex p-3 ${feature.bgColor} rounded-xl mb-4 group-hover:scale-110 transition-transform duration-300`}
+                  className={`inline-flex p-3 ${feature.bgColor} rounded-md mb-4 group-hover:scale-110 transition-transform duration-300`}
                 >
                   <feature.icon
                     aria-hidden="true"

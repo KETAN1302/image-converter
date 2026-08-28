@@ -1,18 +1,16 @@
 "use client";
 
-import { useState, useRef, DragEvent, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import ThemeToggle from "../components/ThemeToggle";
+import ToolHeader from "../components/ToolHeader";
+import Dropzone from "../components/Dropzone";
 import {
   DocumentArrowUpIcon,
   XMarkIcon,
-  PhotoIcon,
   ArrowDownTrayIcon,
   DocumentTextIcon,
   ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
-import { ChevronsLeft } from "lucide-react";
 
 type PdfResult = {
   name: string;
@@ -56,54 +54,9 @@ export default function PdfConverter() {
   const [quality, setQuality] = useState("85");
   const [margin, setMargin] = useState("0");
   const [isConverting, setIsConverting] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
   const [result, setResult] = useState<PdfResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Check if mobile on mount and resize
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    setError(null);
-
-    const droppedFiles = Array.from(e.dataTransfer.files).filter((file) =>
-      file.type.startsWith("image/"),
-    );
-
-    setFiles((prev) => [...prev, ...droppedFiles]);
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(e.target.files || []).filter((file) =>
-      file.type.startsWith("image/"),
-    );
-    setFiles((prev) => [...prev, ...selectedFiles]);
-  };
 
   const removeFile = (index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
@@ -178,108 +131,45 @@ export default function PdfConverter() {
     }
   };
 
+  const clearAllFiles = () => {
+    setFiles([]);
+    setResult(null);
+    setError(null);
+    setIsConverting(false);
+    setProgress(0);
+  };
+
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <div className="sticky top-0 z-10 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center min-w-[70px]">
-            <Link
-              href="/"
-              className="flex items-center gap-1.5 text-base font-semibold text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              <ChevronsLeft className="w-5 h-5" />
-              <span>Home</span>
-            </Link>
-          </div>
-          <div className="text-center px-2">
-            <h1 className="text-xl md:text-2xl font-bold flex items-center justify-center gap-2">
-              <DocumentTextIcon className="w-6 h-6 text-blue-500 shrink-0" />
-              <span className="bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                Image to PDF Converter
-              </span>
-            </h1>
-            <p className="font-medium text-xs md:text-sm text-gray-950 dark:text-white">
-              Convert your images to PDF documents instantly
-            </p>
-          </div>
-          <div className="flex items-center justify-end min-w-[70px]">
-            <ThemeToggle />
-          </div>
-        </div>
-      </div>
+      <ToolHeader
+        title="Image to PDF Converter"
+        subtitle="Convert your images to PDF documents"
+        gradient="from-blue-600 to-cyan-600"
+      />
 
       <div className="max-w-4xl mx-auto px-4 py-4 md:px-8 md:py-8">
         {/* Drop Zone */}
-        <div className="mb-4 md:mb-8">
-          <div
-            onDrop={handleDrop}
-            onDragOver={(e) => e.preventDefault()}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onClick={() => fileInputRef.current?.click()}
-            className={`
-              relative w-full p-6 md:p-8 mb-4 border-3 border-dashed rounded-2xl
-              transition-all duration-300 cursor-pointer
-              ${
-                isDragging
-                  ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-102 shadow-lg"
-                  : "border-gray-300 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-gray-900 hover:shadow-md"
-              }
-            `}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              aria-label="Select images to convert to PDF"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileSelect}
-            />
-
-            <div className="text-center">
-              <DocumentArrowUpIcon
-                aria-hidden="true"
-                className={`w-12 h-12 md:w-20 md:h-20 mx-auto mb-2 md:mb-4 transition-all duration-300 ${
-                  isDragging
-                    ? "text-blue-500 scale-110"
-                    : "text-gray-500 dark:text-gray-400"
-                }`}
-              />
-
-              <p className="text-base md:text-xl font-bold text-gray-950 dark:text-white mb-1 md:mb-2">
-                {isDragging
-                  ? "Drop images here"
-                  : isMobile
-                    ? "Tap to upload"
-                    : "Drag & drop your images here"}
-              </p>
-
-              <p className="text-xs md:text-sm font-medium text-gray-950 dark:text-white mb-3 md:mb-4">
-                Supports: JPG, PNG, WebP, GIF (Max 50MB per file)
-              </p>
-
-              <div className="flex flex-col sm:flex-row justify-center gap-2 md:gap-3">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    fileInputRef.current?.click();
-                  }}
-                  className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 text-white text-sm md:text-base font-semibold rounded-xl active:bg-blue-700 hover:bg-blue-700 transition-colors shadow-md active:shadow-lg cursor-pointer"
-                >
-                  <PhotoIcon className="w-4 h-4 md:w-5 md:h-5" />
-                  <span>Choose Images</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        {files.length === 0 && (
+          <Dropzone
+            multiple
+            onFilesSelected={(newFiles) => {
+              const imageFiles = newFiles.filter((file) => file.type.startsWith("image/"));
+              setFiles((prev) => [...prev, ...imageFiles]);
+            }}
+            accept="image/*"
+            icon={DocumentArrowUpIcon}
+            title="Drag & drop your images here"
+            dragTitle="Drop images here"
+            buttonLabel="Choose Images"
+            ariaLabel="Select images to convert to PDF"
+            subtitle="Supports: JPG, PNG, WebP, GIF (Max 50MB per file)"
+          />
+        )}
 
         {/* Error Display */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md flex items-start gap-3">
             <ExclamationCircleIcon className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm font-semibold text-red-700 dark:text-red-300">{error}</p>
@@ -313,7 +203,7 @@ export default function PdfConverter() {
               {files.map((file, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800/50 rounded-xl"
+                  className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800/50 rounded-md"
                 >
                   <div className="w-10 h-10 rounded bg-gray-200 dark:bg-gray-700 overflow-hidden shrink-0 relative">
                     <FilePreviewImage file={file} />
@@ -359,7 +249,7 @@ export default function PdfConverter() {
                   aria-label="Page Size"
                   value={pageSize}
                   onChange={(e) => setPageSize(e.target.value)}
-                  className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium rounded-md p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   <option value="auto">Auto (match image size)</option>
                   <option value="a4">A4</option>
@@ -379,7 +269,7 @@ export default function PdfConverter() {
                   aria-label="Orientation"
                   value={orientation}
                   onChange={(e) => setOrientation(e.target.value)}
-                  className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium rounded-md p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 >
                   <option value="auto">Auto (follow image)</option>
                   <option value="portrait">Portrait</option>
@@ -443,23 +333,33 @@ export default function PdfConverter() {
         {/* Convert Button */}
         {files.length > 0 && (
           <>
-            <button
-              onClick={handleConvert}
-              disabled={isConverting}
-              className="w-full py-3.5 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-gray-300 disabled:to-gray-300 dark:disabled:from-gray-800 dark:disabled:to-gray-800 disabled:text-gray-500 text-white font-bold rounded-xl transition-all shadow-md active:scale-99 flex items-center justify-center gap-2"
-            >
-              {isConverting ? (
-                <>
-                  <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Converting... {progress}%</span>
-                </>
-              ) : (
-                <>
-                  <DocumentTextIcon aria-hidden="true" className="w-5 h-5" />
-                  <span>Create PDF ({files.length} images)</span>
-                </>
-              )}
-            </button>
+            <div className="flex gap-3 items-center">
+              <button
+                type="button"
+                onClick={clearAllFiles}
+                className="flex-1 px-5 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold rounded-md transition-all active:scale-98 flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-700 cursor-pointer shadow-sm text-sm md:text-base"
+              >
+                <XMarkIcon aria-hidden="true" className="w-5 h-5" />
+                <span>Cancel</span>
+              </button>
+              <button
+                onClick={handleConvert}
+                disabled={isConverting}
+                className="flex-1 px-5 py-3 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-gray-300 disabled:to-gray-300 dark:disabled:from-gray-800 dark:disabled:to-gray-800 disabled:text-gray-500 text-white font-bold rounded-md transition-all shadow-md active:scale-99 flex items-center justify-center gap-2 cursor-pointer text-sm md:text-base"
+              >
+                {isConverting ? (
+                  <>
+                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Converting... {progress}%</span>
+                  </>
+                ) : (
+                  <>
+                    <DocumentTextIcon aria-hidden="true" className="w-5 h-5" />
+                    <span>Create PDF ({files.length} images)</span>
+                  </>
+                )}
+              </button>
+            </div>
 
             {/* Progress Bar */}
             {isConverting && (
@@ -482,7 +382,7 @@ export default function PdfConverter() {
         {result && (
           <div className="mt-8 p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 animate-in fade-in duration-300">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-md flex items-center justify-center">
                 <DocumentTextIcon aria-hidden="true" className="w-8 h-8 text-green-600 dark:text-green-400" />
               </div>
               <div className="flex-1">
@@ -502,7 +402,7 @@ export default function PdfConverter() {
                 href={result.data}
                 download={result.name}
                 aria-label={`Download generated PDF ${result.name}`}
-                className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold shadow-md transition-colors flex items-center gap-2"
+                className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-semibold shadow-md transition-colors flex items-center gap-2"
               >
                 <ArrowDownTrayIcon aria-hidden="true" className="w-4 h-4" />
                 Download

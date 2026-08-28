@@ -122,7 +122,7 @@ export default function Header() {
             <Link href="/" className="shrink-0">
               <div className="relative w-20 h-10">
                 <Image
-                  src="/logo.png"
+                  src="/logo.jpg"
                   alt="ImageConverter Logo"
                   fill
                   className="object-contain"
@@ -157,7 +157,7 @@ export default function Header() {
                     onMouseEnter={() => setIsImageToolsOpen(true)}
                     onMouseLeave={() => setIsImageToolsOpen(false)}
                     role="menu"
-                    className="absolute top-full left-0 mt-1 w-[450px] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 p-2 animate-in fade-in slide-in-from-top-2 z-50"
+                    className="absolute top-full left-0 mt-1 w-[450px] bg-white dark:bg-gray-900 rounded-md shadow-xl border border-gray-200 dark:border-gray-800 p-2 animate-in fade-in slide-in-from-top-2 z-50"
                   >
                     <div className="grid grid-cols-2 gap-1">
                       {imageTools.map((tool) => (
@@ -203,7 +203,7 @@ export default function Header() {
                     onMouseEnter={() => setIsPDFToolsOpen(true)}
                     onMouseLeave={() => setIsPDFToolsOpen(false)}
                     role="menu"
-                    className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 p-2 animate-in fade-in slide-in-from-top-2 z-50 space-y-1"
+                    className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-900 rounded-md shadow-xl border border-gray-200 dark:border-gray-800 p-2 animate-in fade-in slide-in-from-top-2 z-50 space-y-1"
                   >
                     {pdfTools.map((tool) => (
                       <Link

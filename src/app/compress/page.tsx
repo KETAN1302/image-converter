@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import ThemeToggle from "../components/ThemeToggle";
+import ToolHeader from "../components/ToolHeader";
+import Dropzone from "../components/Dropzone";
 import {
-  CloudArrowUpIcon,
   ArrowDownTrayIcon,
   ExclamationCircleIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { ChevronsLeft } from "lucide-react";
 
 interface CompressedFile {
   name: string;
@@ -26,32 +25,9 @@ export default function CompressImage() {
   const [quality, setQuality] = useState(60);
   const [originalSize, setOriginalSize] = useState(0);
   const [compressedSize, setCompressedSize] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
   const [result, setResult] = useState<CompressedFile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Check if mobile on mount and resize
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const uploadedFile = e.target.files?.[0];
-    if (uploadedFile) {
-      processFile(uploadedFile);
-    }
-  };
 
   const processFile = (uploadedFile: File) => {
     if (!uploadedFile.type.startsWith("image/")) {
@@ -81,28 +57,6 @@ export default function CompressImage() {
       setPreview(event.target?.result as string);
     };
     reader.readAsDataURL(uploadedFile);
-  };
-
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    const uploadedFile = e.dataTransfer.files?.[0];
-    if (uploadedFile) {
-      processFile(uploadedFile);
-    }
   };
 
   const compressImage = async () => {
@@ -144,7 +98,8 @@ export default function CompressImage() {
       };
       reader.readAsDataURL(blob);
     } catch (error) {
-      const msg = error instanceof Error ? error.message : "Error compressing image";
+      const msg =
+        error instanceof Error ? error.message : "Error compressing image";
       setError(msg);
       console.error(error);
     } finally {
@@ -178,38 +133,21 @@ export default function CompressImage() {
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <div className="sticky top-0 z-10 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center min-w-[70px]">
-            <Link
-              href="/"
-              className="flex items-center gap-1.5 text-base font-semibold text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              <ChevronsLeft className="w-5 h-5" />
-              <span>Home</span>
-            </Link>
-          </div>
-          <div className="text-center px-2">
-            <h1 className="text-xl md:text-2xl font-bold bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-              Image Compressor
-            </h1>
-            <p className="font-medium text-xs md:text-sm text-gray-950 dark:text-white">
-              Reduce image file sizes with smart compression
-            </p>
-          </div>
-          <div className="flex items-center justify-end min-w-[70px]">
-            <ThemeToggle />
-          </div>
-        </div>
-      </div>
+      <ToolHeader
+        title="Image Compressor"
+        subtitle="Reduce image file sizes with smart compression"
+        gradient="from-blue-600 to-cyan-600"
+      />
 
       <div className="max-w-4xl mx-auto px-4 py-4 md:px-8 md:py-8">
         {/* Error Display */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md flex items-start gap-3">
             <ExclamationCircleIcon className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-semibold text-red-700 dark:text-red-300">{error}</p>
+              <p className="text-sm font-semibold text-red-700 dark:text-red-300">
+                {error}
+              </p>
               <button
                 onClick={() => setError(null)}
                 className="text-xs font-semibold text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 mt-1"
@@ -221,78 +159,16 @@ export default function CompressImage() {
         )}
 
         {/* Upload Section */}
-        <div className="mb-4 md:mb-8">
-          {/* Main Drop Zone */}
-          <div
-            onDrop={handleDrop}
-            onDragOver={(e) => e.preventDefault()}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            className={`
-              relative w-full p-6 md:p-8 mb-4 border-3 border-dashed rounded-2xl
-              transition-all duration-300 cursor-pointer
-              ${
-                isDragging
-                  ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-102 shadow-lg"
-                  : "border-gray-300 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-gray-900 hover:shadow-md"
-              }
-            `}
-          >
-            <div className="text-center">
-              <CloudArrowUpIcon
-                aria-hidden="true"
-                className={`w-12 h-12 md:w-20 md:h-20 mx-auto mb-2 md:mb-4 transition-all duration-300 ${
-                  isDragging
-                    ? "text-blue-500 scale-110"
-                    : "text-gray-500 dark:text-gray-400"
-                }`}
-              />
-              <p className="text-base md:text-xl font-bold text-gray-950 dark:text-white mb-1 md:mb-2">
-                {isDragging
-                  ? "Drop here"
-                  : isMobile
-                    ? "Tap to upload"
-                    : "Drag & drop here"}
-              </p>
-              <p className="text-xs md:text-sm font-medium text-gray-950 dark:text-white mb-3 md:mb-4">
-                Supports: JPG, PNG, WebP, GIF (Max 50MB)
-              </p>
-
-              {/* Upload Button */}
-              <div className="flex flex-col sm:flex-row justify-center gap-2 md:gap-3">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 text-white text-sm md:text-base font-semibold rounded-xl active:bg-blue-700 hover:bg-blue-700 transition-colors shadow-md active:shadow-lg"
-                >
-                  <svg
-                    aria-hidden="true"
-                    className="w-4 h-4 md:w-5 md:h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  Select Image
-                </button>
-              </div>
-            </div>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              aria-label="Upload image to compress"
-              onChange={handleFileChange}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            />
-          </div>
-        </div>
+        {!file && (
+          <Dropzone
+            onFilesSelected={(files) => {
+              if (files[0]) processFile(files[0]);
+            }}
+            accept="image/*"
+            ariaLabel="Upload image to compress"
+            subtitle="Supports: JPG, PNG, WebP, GIF (Max 50MB)"
+          />
+        )}
 
         {/* File Preview & Options */}
         {file && (
@@ -378,7 +254,10 @@ export default function CompressImage() {
             {/* Quality Slider */}
             <div className="bg-gray-50 dark:bg-gray-800 rounded p-4">
               <div className="flex justify-between items-center mb-3">
-                <label htmlFor="compress-quality" className="text-sm font-semibold text-gray-950 dark:text-white">
+                <label
+                  htmlFor="compress-quality"
+                  className="text-sm font-semibold text-gray-950 dark:text-white"
+                >
                   Quality Adjustment
                 </label>
                 <span className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-bold">
@@ -405,27 +284,37 @@ export default function CompressImage() {
 
         {/* Compress Button */}
         {file && (
-          <button
-            onClick={compressImage}
-            disabled={loading || uploadProgress < 100}
-            className={`w-full py-3.5 rounded font-bold text-base md:text-lg transition-all duration-200 active:scale-98 flex items-center justify-center gap-2 shadow-md ${
-              !loading && uploadProgress === 100
-                ? "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:scale-102"
-                : "bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed"
-            }`}
-          >
-            {loading ? (
-              <>
-                <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Compressing...</span>
-              </>
-            ) : (
-              <>
-                <ArrowDownTrayIcon aria-hidden="true" className="w-5 h-5" />
-                <span>Compress & Download</span>
-              </>
-            )}
-          </button>
+          <div className="flex gap-3 items-center">
+            <button
+              type="button"
+              onClick={clearAll}
+              className="flex-1 px-5 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold rounded-md transition-all active:scale-98 flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-700 cursor-pointer shadow-sm text-sm md:text-base"
+            >
+              <XMarkIcon aria-hidden="true" className="w-5 h-5" />
+              <span>Cancel</span>
+            </button>
+            <button
+              onClick={compressImage}
+              disabled={loading || uploadProgress < 100}
+              className={`flex-1 px-5 py-3 rounded-md font-bold text-base md:text-lg transition-all duration-200 active:scale-98 flex items-center justify-center gap-2 shadow-md cursor-pointer ${
+                !loading && uploadProgress === 100
+                  ? "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:scale-102"
+                  : "bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Compressing...</span>
+                </>
+              ) : (
+                <>
+                  <ArrowDownTrayIcon aria-hidden="true" className="w-5 h-5" />
+                  <span>Compress & Download</span>
+                </>
+              )}
+            </button>
+          </div>
         )}
 
         {/* Results */}

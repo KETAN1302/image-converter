@@ -1,18 +1,17 @@
 "use client";
 
-import { useState, useRef, DragEvent, useEffect } from "react";
-import Link from "next/link";
-import ThemeToggle from "../components/ThemeToggle";
+import { useState, useEffect } from "react";
+import ToolHeader from "../components/ToolHeader";
+import Dropzone from "../components/Dropzone";
 import {
-  CloudArrowUpIcon,
   ArrowDownTrayIcon,
   SparklesIcon,
   ExclamationCircleIcon,
   PaintBrushIcon,
   EyeIcon,
   CheckIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { ChevronsLeft } from "lucide-react";
 
 export default function RemoveBackgroundPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -20,7 +19,6 @@ export default function RemoveBackgroundPage() {
   const [processedUrl, setProcessedUrl] = useState<string | null>(null);
   const [compositeUrl, setCompositeUrl] = useState<string | null>(null);
 
-  const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressStatus, setProgressStatus] = useState<string>("");
   const [progressPercent, setProgressPercent] = useState<number>(0);
@@ -36,21 +34,6 @@ export default function RemoveBackgroundPage() {
   );
   const [showOriginalComparison, setShowOriginalComparison] =
     useState<boolean>(false);
-  const [isMobile, setIsMobile] = useState(false);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Check if mobile on mount and resize
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   // Clean up object URLs
   useEffect(() => {
@@ -59,38 +42,6 @@ export default function RemoveBackgroundPage() {
       if (compositeUrl) URL.revokeObjectURL(compositeUrl);
     };
   }, [processedUrl, compositeUrl]);
-
-  // Handle Drag & Drop
-  const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    setError(null);
-
-    const droppedFile = e.dataTransfer.files?.[0];
-    if (droppedFile) {
-      handleFileSelected(droppedFile);
-    }
-  };
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      handleFileSelected(selectedFile);
-    }
-  };
 
   const handleFileSelected = (selectedFile: File) => {
     if (!selectedFile.type.startsWith("image/")) {
@@ -346,37 +297,16 @@ export default function RemoveBackgroundPage() {
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <div className="sticky top-0 z-10 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center min-w-[70px]">
-            <Link
-              href="/"
-              className="flex items-center gap-1.5 text-base font-semibold text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              <ChevronsLeft className="w-5 h-5" />
-              <span>Home</span>
-            </Link>
-          </div>
-          <div className="text-center px-2">
-            <h1 className="text-xl md:text-2xl font-bold">
-              <span className="bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Remove Background
-              </span>
-            </h1>
-            <p className="font-medium text-xs md:text-sm text-gray-950 dark:text-white">
-              Remove background with AI — 100% free & private in your browser
-            </p>
-          </div>
-          <div className="flex items-center justify-end min-w-[70px]">
-            <ThemeToggle />
-          </div>
-        </div>
-      </div>
+      <ToolHeader
+        title="Remove Background"
+        subtitle="Remove background with AI — 100% free & private in your browser"
+        gradient="from-blue-600 to-purple-600"
+      />
 
       <div className="max-w-4xl mx-auto px-4 py-4 md:px-8 md:py-8">
         {/* Error Display */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md flex items-start gap-3">
             <ExclamationCircleIcon className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm font-semibold text-red-700 dark:text-red-300">
@@ -394,67 +324,15 @@ export default function RemoveBackgroundPage() {
 
         {/* Upload Drop Zone */}
         {!file && (
-          <div className="mb-4 md:mb-8">
-            <div
-              onDrop={handleDrop}
-              onDragOver={(e) => e.preventDefault()}
-              onDragEnter={handleDragEnter}
-              onDragLeave={handleDragLeave}
-              onClick={() => fileInputRef.current?.click()}
-              className={`
-                relative w-full p-6 md:p-8 mb-4 border-3 border-dashed rounded-2xl
-                transition-all duration-300 cursor-pointer
-                ${
-                  isDragging
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-102 shadow-lg"
-                    : "border-gray-300 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-gray-900 hover:shadow-md"
-                }
-              `}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                aria-label="Select image for background removal"
-                accept="image/*"
-                onChange={handleFileInput}
-                className="hidden"
-              />
-
-              <div className="text-center">
-                <CloudArrowUpIcon
-                  aria-hidden="true"
-                  className={`w-12 h-12 md:w-20 md:h-20 mx-auto mb-2 md:mb-4 transition-all duration-300 ${
-                    isDragging
-                      ? "text-blue-500 scale-110"
-                      : "text-gray-500 dark:text-gray-400"
-                  }`}
-                />
-                <p className="text-base md:text-xl font-bold text-gray-950 dark:text-white mb-1 md:mb-2">
-                  {isDragging
-                    ? "Drop here"
-                    : isMobile
-                      ? "Tap to upload"
-                      : "Drag & drop here"}
-                </p>
-                <p className="text-xs md:text-sm font-medium text-gray-950 dark:text-white mb-3 md:mb-4">
-                  Supports: PNG, JPG, JPEG, WebP, AVIF, GIF (Max 25MB)
-                </p>
-                <div className="flex flex-col sm:flex-row justify-center gap-2 md:gap-3">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      fileInputRef.current?.click();
-                    }}
-                    className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 text-white text-sm md:text-base font-semibold rounded-xl active:bg-blue-700 hover:bg-blue-700 transition-colors shadow-md active:shadow-lg"
-                  >
-                    <SparklesIcon className="w-4 h-4 md:w-5 md:h-5" />
-                    Select Image
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <Dropzone
+            onFilesSelected={(files) => {
+              if (files[0]) handleFileSelected(files[0]);
+            }}
+            accept="image/*"
+            buttonIcon={<SparklesIcon className="w-4 h-4 md:w-5 md:h-5" />}
+            ariaLabel="Select image for background removal"
+            subtitle="Supports: PNG, JPG, JPEG, WebP, AVIF, GIF (Max 25MB)"
+          />
         )}
 
         {/* Processing State / Preview Studio */}
@@ -479,7 +357,7 @@ export default function RemoveBackgroundPage() {
                       onClick={() =>
                         setShowOriginalComparison(!showOriginalComparison)
                       }
-                      className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-xl text-xs md:text-sm font-semibold text-gray-950 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center gap-1.5"
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md text-xs md:text-sm font-semibold text-gray-950 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center gap-1.5"
                     >
                       <EyeIcon className="w-4 h-4" />
                       {showOriginalComparison
@@ -514,10 +392,18 @@ export default function RemoveBackgroundPage() {
 
               {/* Action Trigger Button if not processed yet */}
               {!processedUrl && !isProcessing && (
-                <div className="mt-6 flex justify-center">
+                <div className="mt-6 flex justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleClear}
+                    className="flex-1 px-5 py-3 md:py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold rounded-md transition-all active:scale-98 flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-700 cursor-pointer shadow-sm text-sm md:text-base"
+                  >
+                    <XMarkIcon aria-hidden="true" className="w-5 h-5" />
+                    <span>Cancel</span>
+                  </button>
                   <button
                     onClick={handleRemoveBackground}
-                    className="px-6 py-2.5 md:px-8 md:py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold text-sm md:text-base rounded-xl shadow-md hover:shadow-lg active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="flex-1 px-5 py-3 md:px-8 md:py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold text-sm md:text-base rounded-md shadow-md hover:shadow-lg active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <SparklesIcon className="w-5 h-5" />
                     <span>Remove Background with AI</span>
@@ -602,7 +488,7 @@ export default function RemoveBackgroundPage() {
                                     | "gradient",
                                 )
                               }
-                              className={`py-2 px-3 text-xs md:text-sm font-bold rounded-xl border transition-all ${
+                              className={`py-2 px-3 text-xs md:text-sm font-bold rounded-md border transition-all ${
                                 bgType === tab.id
                                   ? "border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-xs"
                                   : "border-gray-250 dark:border-gray-700 text-gray-950 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
@@ -663,7 +549,7 @@ export default function RemoveBackgroundPage() {
                                 key={preset.name}
                                 onClick={() => setBgGradient(preset.value)}
                                 style={{ background: preset.value }}
-                                className={`h-12 rounded-xl border-2 transition-transform hover:scale-105 flex items-center justify-center shadow-xs ${
+                                className={`h-12 rounded-md border-2 transition-transform hover:scale-105 flex items-center justify-center shadow-xs ${
                                   bgGradient === preset.value
                                     ? "border-blue-600 scale-105"
                                     : "border-transparent"
@@ -682,14 +568,14 @@ export default function RemoveBackgroundPage() {
                       <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
                         <button
                           onClick={handleDownload}
-                          className="w-full py-3.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md active:scale-99 transition-all flex items-center justify-center gap-2"
+                          className="w-full py-3.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-md shadow-md active:scale-99 transition-all flex items-center justify-center gap-2"
                         >
                           <ArrowDownTrayIcon className="w-5 h-5" />
                           Download High-Res PNG
                         </button>
                         <button
                           onClick={handleClear}
-                          className="w-full py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-950 dark:text-white font-semibold rounded-xl text-sm transition-colors"
+                          className="w-full py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-950 dark:text-white font-semibold rounded-md text-sm transition-colors"
                         >
                           Process Another Image
                         </button>

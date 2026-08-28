@@ -18,8 +18,10 @@ function getServerSnapshot() {
 
 export default function ThemeToggle({
   className = "",
+  iconClassName = "w-5 h-5",
 }: {
   className?: string;
+  iconClassName?: string;
 }) {
   const mounted = useSyncExternalStore(
     subscribe,
@@ -69,15 +71,15 @@ export default function ThemeToggle({
     <button
       onClick={toggleTheme}
       type="button"
-      className={`p-2 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-hidden cursor-pointer flex items-center justify-center ${className}`}
+      className={`p-2 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-hidden cursor-pointer flex items-center justify-center ${className}`}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
       {isDark ? (
-        <SunIcon className="w-5 h-5 text-amber-400" aria-hidden="true" />
+        <SunIcon className={`${iconClassName} text-amber-400`} aria-hidden="true" />
       ) : (
         <MoonIcon
-          className="w-5 h-5 text-gray-950 dark:text-white"
+          className={`${iconClassName} text-gray-950 dark:text-white`}
           aria-hidden="true"
         />
       )}

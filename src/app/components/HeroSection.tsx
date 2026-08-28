@@ -231,7 +231,7 @@ export default function HeroSection() {
             >
               <Link
                 href="/converter"
-                className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-3.5 rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-lg shadow-blue-600/20"
+                className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-3.5 rounded-md hover:bg-blue-700 transition-colors font-semibold shadow-lg shadow-blue-600/20"
               >
                 <PhotoIcon aria-hidden="true" className="w-5 h-5" />
                 Get Started
@@ -256,7 +256,7 @@ export default function HeroSection() {
             >
               <Link
                 href="/image-to-pdf"
-                className="inline-flex items-center gap-2 bg-gray-200 text-gray-950 dark:bg-gray-700 dark:text-white px-8 py-3.5 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-semibold"
+                className="inline-flex items-center gap-2 bg-gray-200 text-gray-950 dark:bg-gray-700 dark:text-white px-8 py-3.5 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-semibold"
               >
                 <DocumentTextIcon aria-hidden="true" className="w-5 h-5" />
                 Create PDF
@@ -287,7 +287,7 @@ export default function HeroSection() {
               >
                 <Link
                   href={tool.href}
-                  className="group relative block p-6 bg-white dark:bg-gray-800 rounded-sm border border-gray-200 dark:border-gray-700 hover:border-transparent hover:shadow-lg transition-all duration-300 overflow-hidden"
+                  className="group relative block p-6 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 hover:border-transparent hover:shadow-lg transition-all duration-300 overflow-hidden"
                 >
                   {/* Gradient Background on Hover */}
                   <motion.div
@@ -299,18 +299,14 @@ export default function HeroSection() {
 
                   <div className="relative">
                     <div className="flex items-start justify-between mb-4">
-                      <motion.div
-                        whileHover={{ rotate: 360 }}
-                        transition={{ duration: 0.5 }}
-                      >
+                      <div>
                         <Icon aria-hidden="true" className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                      </motion.div>
+                      </div>
                       <motion.div
                         initial={{ x: -10, opacity: 0 }}
                         whileHover={{ x: 0, opacity: 1 }}
                         transition={{ type: "spring", stiffness: 300 }}
                       >
-                        <ArrowRightIcon aria-hidden="true" className="w-4 h-4 text-gray-500 group-hover:text-blue-600 transition-colors" />
                       </motion.div>
                     </div>
                     <h2 className="text-lg font-bold text-gray-950 dark:text-white mb-2">
@@ -320,13 +316,6 @@ export default function HeroSection() {
                       {tool.description}
                     </p>
 
-                    {/* Animated underline */}
-                    <motion.div
-                      initial={{ width: 0 }}
-                      whileHover={{ width: "100%" }}
-                      transition={{ duration: 0.3 }}
-                      className={`absolute bottom-0 left-0 h-0.5`}
-                    />
                   </div>
                 </Link>
               </motion.div>

@@ -208,7 +208,7 @@ export default function Footer() {
               className="relative w-40 h-14"
             >
               <Image
-                src="/logo.png"
+                src="/logo.jpg"
                 alt="ImageConverter Logo"
                 fill
                 className="object-contain"

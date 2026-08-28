@@ -1,19 +1,16 @@
 "use client";
 
-import { useState, DragEvent, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import NextImage from "next/image";
 import {
   ArrowDownTrayIcon,
   XMarkIcon,
-  PhotoIcon,
-  CloudArrowUpIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
-import { ChevronsLeft } from "lucide-react";
-import Link from "next/link";
-import ThemeToggle from "../components/ThemeToggle";
+import ToolHeader from "../components/ToolHeader";
+import Dropzone from "../components/Dropzone";
 
 interface ConvertedFile {
   name: string;
@@ -29,11 +26,6 @@ interface ApiFile {
   data: string;
   preview?: string;
 }
-
-type DirectoryInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
-  webkitdirectory?: string;
-  directory?: string;
-};
 
 const isImageFile = (file: File) => {
   return (
@@ -78,28 +70,12 @@ export default function Home() {
   const [results, setResults] = useState<ConvertedFile[]>([]);
   const [isConverting, setIsConverting] = useState(false);
   const [convertProgress, setConvertProgress] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{
     [key: string]: number;
   }>({});
   const [error, setError] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const folderInputRef = useRef<HTMLInputElement>(null);
   const convertIntervalRef = useRef<number | null>(null);
-
-  // Check if mobile on mount and resize
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   // Clear convert progress interval on unmount
   useEffect(() => {
@@ -109,74 +85,6 @@ export default function Home() {
       }
     };
   }, []);
-
-  const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    setError(null);
-
-    const items = Array.from(e.dataTransfer.items);
-    const imageFiles: File[] = [];
-
-    const processEntry = async (
-      entry: FileSystemFileEntry | FileSystemDirectoryEntry,
-    ) => {
-      if (entry.isFile) {
-        const fileEntry = entry as FileSystemFileEntry;
-
-        const file = await new Promise<File>((resolve) =>
-          fileEntry.file(resolve),
-        );
-
-        if (isImageFile(file)) {
-          imageFiles.push(file);
-          simulateUploadProgress(file.name);
-        }
-      } else if (entry.isDirectory) {
-        const dirEntry = entry as FileSystemDirectoryEntry;
-        const reader = dirEntry.createReader();
-
-        const entries = await new Promise<FileSystemEntry[]>((resolve) => {
-          reader.readEntries(resolve);
-        });
-
-        for (const childEntry of entries) {
-          await processEntry(
-            childEntry as FileSystemFileEntry | FileSystemDirectoryEntry,
-          );
-        }
-      }
-    };
-
-    Promise.all(
-      items.map(async (item) => {
-        const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
-        if (entry) {
-          await processEntry(
-            entry as FileSystemFileEntry | FileSystemDirectoryEntry,
-          );
-        } else {
-          const file = item.getAsFile();
-          if (file && isImageFile(file)) {
-            imageFiles.push(file);
-            simulateUploadProgress(file.name);
-          }
-        }
-      }),
-    ).then(() => {
-      setFiles((prev) => [...prev, ...imageFiles]);
-    });
-  };
 
   const simulateUploadProgress = (fileName: string) => {
     setUploadProgress((prev) => ({ ...prev, [fileName]: 0 }));
@@ -192,26 +100,13 @@ export default function Home() {
     }, 50);
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFilesAdded = (selectedFiles: File[]) => {
     setError(null);
-    const selectedFiles = Array.from(e.target.files || []).filter((file) =>
-      isImageFile(file),
-    );
-    selectedFiles.forEach((file) => {
+    const validImageFiles = selectedFiles.filter((file) => isImageFile(file));
+    validImageFiles.forEach((file) => {
       simulateUploadProgress(file.name);
     });
-    setFiles((prev) => [...prev, ...selectedFiles]);
-  };
-
-  const handleFolderSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setError(null);
-    const selectedFiles = Array.from(e.target.files || []).filter((file) =>
-      isImageFile(file),
-    );
-    selectedFiles.forEach((file) => {
-      simulateUploadProgress(file.name);
-    });
-    setFiles((prev) => [...prev, ...selectedFiles]);
+    setFiles((prev) => [...prev, ...validImageFiles]);
   };
 
   const removeFile = (index: number) => {
@@ -225,10 +120,16 @@ export default function Home() {
   };
 
   const clearAllFiles = () => {
+    if (convertIntervalRef.current) {
+      clearInterval(convertIntervalRef.current);
+      convertIntervalRef.current = null;
+    }
     setFiles([]);
     setUploadProgress({});
     setResults([]);
     setError(null);
+    setIsConverting(false);
+    setConvertProgress(0);
   };
 
   const validateInputs = (): boolean => {
@@ -393,132 +294,37 @@ export default function Home() {
   return (
     <main className="min-h-screen">
       {/* Header */}
-      <div className="sticky top-0 z-10 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center min-w-[70px]">
-            <Link
-              href="/"
-              className="flex items-center gap-1.5 text-base font-semibold text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              <ChevronsLeft className="w-5 h-5" />
-              <span>Home</span>
-            </Link>
-          </div>
-          <div className="text-center px-2">
-            <h1 className="text-xl md:text-2xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Image Converter
-            </h1>
-            <p className="font-medium text-xs md:text-sm text-gray-950 dark:text-white">
-              Convert and optimize your images
-            </p>
-          </div>
-          <div className="flex items-center justify-end min-w-[70px]">
-            <ThemeToggle />
-          </div>
-        </div>
-      </div>
+      <ToolHeader
+        title="Image Converter"
+        subtitle="Convert and optimize your images"
+        gradient="from-blue-600 to-purple-600"
+      />
 
       <div className="max-w-4xl mx-auto px-4 py-4 md:px-8 md:py-8">
         {/* Upload Section */}
-        <div className="mb-4 md:mb-8">
-          {/* Main Drop Zone */}
-          <div
-            onDrop={handleDrop}
-            onDragOver={(e) => e.preventDefault()}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            className={`
-              relative w-full p-6 md:p-8 mb-4 border-3 border-dashed rounded-2xl
-              transition-all duration-300 cursor-pointer
-              ${
-                isDragging
-                  ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-102 shadow-lg"
-                  : "border-gray-300 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-gray-900 hover:shadow-md"
-              }
-            `}
-          >
-            <div className="text-center">
-              <CloudArrowUpIcon
-                aria-hidden="true"
-                className={`w-12 h-12 md:w-20 md:h-20 mx-auto mb-2 md:mb-4 transition-all duration-300 ${
-                  isDragging
-                    ? "text-blue-500 scale-110"
-                    : "text-gray-500 dark:text-gray-400"
-                }`}
-              />
-
-              <p className="text-base md:text-xl font-bold text-gray-950 dark:text-white mb-1 md:mb-2">
-                {isDragging
-                  ? "Drop here"
-                  : isMobile
-                    ? "Tap to upload"
-                    : "Drag & drop here"}
-              </p>
-
-              <p className="text-xs md:text-sm font-medium text-gray-950 dark:text-white mb-3 md:mb-4">
-                Supports: JPG, PNG, WebP, AVIF, GIF, SVG, HEIC, TIFF
-              </p>
-
-              {/* Upload Buttons */}
-              <div className="flex flex-col sm:flex-row justify-center gap-2 md:gap-3">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 text-white text-sm md:text-base font-semibold rounded-xl active:bg-blue-700 hover:bg-blue-700 transition-colors shadow-md active:shadow-lg"
-                >
-                  <PhotoIcon aria-hidden="true" className="w-4 h-4 md:w-5 md:h-5" />
-                  Select Images
-                </button>
-                <button
-                  onClick={() => folderInputRef.current?.click()}
-                  className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-purple-600 text-white text-sm md:text-base font-semibold rounded-xl active:bg-purple-700 hover:bg-purple-700 transition-colors shadow-md active:shadow-lg"
-                >
-                  <svg
-                    aria-hidden="true"
-                    className="w-4 h-4 md:w-5 md:h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-                    />
-                  </svg>
-                  Select Folder
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Hidden File Inputs */}
-          <input
-            ref={fileInputRef}
-            type="file"
+        {files.length === 0 && (
+          <Dropzone
             multiple
-            aria-label="Select image files"
+            allowFolderUpload
+            onFilesSelected={handleFilesAdded}
+            onFolderSelected={handleFilesAdded}
             accept="image/*,.heic,.heif,.svg,.tiff,.tif"
-            className="hidden"
-            onChange={handleFileSelect}
+            subtitle="Supports: JPG, PNG, WebP, AVIF, GIF, SVG, HEIC, TIFF"
+            buttonLabel="Select Images"
+            folderButtonLabel="Select Folder"
+            ariaLabel="Select image files"
+            folderAriaLabel="Select folder of image files"
           />
-          <input
-            ref={folderInputRef}
-            type="file"
-            multiple
-            aria-label="Select folder of image files"
-            {...({ webkitdirectory: "", directory: "" } as DirectoryInputProps)}
-            className="hidden"
-            onChange={handleFolderSelect}
-          />
-        </div>
+        )}
 
         {/* Error Display */}
         {error && (
           <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded flex items-start gap-3">
             <ExclamationCircleIcon className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-semibold text-red-700 dark:text-red-300">{error}</p>
+              <p className="text-sm font-semibold text-red-700 dark:text-red-300">
+                {error}
+              </p>
               <button
                 onClick={() => setError(null)}
                 className="text-xs font-semibold text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 mt-1"
@@ -545,7 +351,10 @@ export default function Home() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   {/* Format Selection */}
                   <div>
-                    <label htmlFor="output-format" className="block text-xs md:text-sm font-semibold text-gray-950 dark:text-white mb-1 md:mb-2">
+                    <label
+                      htmlFor="output-format"
+                      className="block text-xs md:text-sm font-semibold text-gray-950 dark:text-white mb-1 md:mb-2"
+                    >
                       Output Format
                     </label>
                     <select
@@ -572,7 +381,10 @@ export default function Home() {
                   {/* Quality Slider */}
                   <div>
                     <div className="flex justify-between items-center mb-1">
-                      <label htmlFor="quality-slider" className="text-xs md:text-sm font-semibold text-gray-950 dark:text-white">
+                      <label
+                        htmlFor="quality-slider"
+                        className="text-xs md:text-sm font-semibold text-gray-950 dark:text-white"
+                      >
                         Quality
                       </label>
                       <span className="text-xs md:text-sm bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded-full font-bold">
@@ -603,7 +415,10 @@ export default function Home() {
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label htmlFor="width-input" className="block text-xs font-medium text-gray-950 dark:text-white mb-1">
+                      <label
+                        htmlFor="width-input"
+                        className="block text-xs font-medium text-gray-950 dark:text-white mb-1"
+                      >
                         Width (px)
                       </label>
                       <input
@@ -618,7 +433,10 @@ export default function Home() {
                       />
                     </div>
                     <div>
-                      <label htmlFor="height-input" className="block text-xs font-medium text-gray-950 dark:text-white mb-1">
+                      <label
+                        htmlFor="height-input"
+                        className="block text-xs font-medium text-gray-950 dark:text-white mb-1"
+                      >
                         Height (px)
                       </label>
                       <input
@@ -644,7 +462,7 @@ export default function Home() {
 
         {/* Selected Files Preview */}
         {files.length > 0 && (
-          <div className="mb-4 md:mb-6 p-4 md:p-6 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
+          <div className="mb-4 md:mb-6 p-4 md:p-6 bg-white dark:bg-gray-900 rounded-md shadow-sm border border-gray-200 dark:border-gray-800">
             <div className="flex justify-between items-center mb-3 md:mb-4">
               <h2 className="text-base md:text-lg font-bold text-gray-950 dark:text-white flex items-center gap-2">
                 <span className="w-1 h-5 md:h-6 bg-green-600 rounded-full"></span>
@@ -703,7 +521,9 @@ export default function Home() {
                     {uploadProgress[file.name] === 100 && (
                       <div className="flex items-center gap-1 mt-1">
                         <CheckCircleIcon className="w-3.5 h-3.5 md:w-4 md:h-4 text-green-500" />
-                        <span className="text-xs text-green-700 dark:text-green-400 font-semibold">Ready</span>
+                        <span className="text-xs text-green-700 dark:text-green-400 font-semibold">
+                          Ready
+                        </span>
                       </div>
                     )}
                   </div>
@@ -714,7 +534,10 @@ export default function Home() {
                     aria-label={`Remove ${file.name}`}
                     className="p-1.5 md:p-2 text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-full hover:bg-red-50 dark:hover:bg-gray-800"
                   >
-                    <XMarkIcon aria-hidden="true" className="w-4 h-4 md:w-5 md:h-5" />
+                    <XMarkIcon
+                      aria-hidden="true"
+                      className="w-4 h-4 md:w-5 md:h-5"
+                    />
                   </button>
                 </div>
               ))}
@@ -724,36 +547,46 @@ export default function Home() {
 
         {/* Convert Button */}
         {files.length > 0 && (
-          <button
-            onClick={handleConvert}
-            disabled={files.length === 0 || isConverting}
-            className={`
-            w-full py-3.5 rounded font-bold text-base md:text-lg
-            transition-all duration-200 active:scale-98 hover:scale-102
-            flex items-center justify-center gap-2 shadow-md
-            ${
-              files.length > 0 && !isConverting
-                ? "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg"
-                : "bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed"
-            }
-          `}
-          >
-            {isConverting ? (
-              <>
-                <div className="w-5 h-5 md:w-6 md:h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Converting... {Math.round(convertProgress)}%</span>
-              </>
-            ) : (
-              <>
-                <ArrowDownTrayIcon aria-hidden="true" className="w-5 h-5" />
-                <span>
-                  {files.length > 0
-                    ? `Convert ${files.length} ${files.length === 1 ? "Image" : "Images"}`
-                    : "Select Images"}
-                </span>
-              </>
-            )}
-          </button>
+          <div className="flex gap-3 items-center">
+            <button
+              type="button"
+              onClick={clearAllFiles}
+              className="flex-1 px-5 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold rounded-md transition-all active:scale-98 flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-700 cursor-pointer shadow-sm text-sm md:text-base"
+            >
+              <XMarkIcon aria-hidden="true" className="w-5 h-5" />
+              <span>Cancel</span>
+            </button>
+            <button
+              onClick={handleConvert}
+              disabled={files.length === 0 || isConverting}
+              className={`
+              flex-1 px-5 py-3 rounded-md font-bold text-base md:text-lg
+              transition-all duration-200 active:scale-98 hover:scale-102
+              flex items-center justify-center gap-2 shadow-md cursor-pointer
+              ${
+                files.length > 0 && !isConverting
+                  ? "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg"
+                  : "bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed"
+              }
+            `}
+            >
+              {isConverting ? (
+                <>
+                  <div className="w-5 h-5 md:w-6 md:h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Converting... {Math.round(convertProgress)}%</span>
+                </>
+              ) : (
+                <>
+                  <ArrowDownTrayIcon aria-hidden="true" className="w-5 h-5" />
+                  <span>
+                    {files.length > 0
+                      ? `Convert ${files.length} ${files.length === 1 ? "Image" : "Images"}`
+                      : "Select Images"}
+                  </span>
+                </>
+              )}
+            </button>
+          </div>
         )}
 
         {/* Results */}
@@ -795,7 +628,10 @@ export default function Home() {
                         className="absolute inset-0 bg-black/20 bg-opacity-0 hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center group"
                       >
                         <div className="bg-white rounded-full p-3 opacity-0 group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all duration-200 shadow-lg">
-                          <ArrowDownTrayIcon aria-hidden="true" className="w-5 h-5 text-gray-950" />
+                          <ArrowDownTrayIcon
+                            aria-hidden="true"
+                            className="w-5 h-5 text-gray-950"
+                          />
                         </div>
                       </a>
                     </div>
@@ -825,7 +661,10 @@ export default function Home() {
                           {/* Size Comparison */}
                           {savings && (
                             <div className="mt-2 flex items-center gap-2">
-                              <DocumentTextIcon aria-hidden="true" className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />
+                              <DocumentTextIcon
+                                aria-hidden="true"
+                                className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300"
+                              />
                               <span
                                 className={`text-xs font-bold ${savings.isReduced ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"}`}
                               >
@@ -849,7 +688,10 @@ export default function Home() {
                           className="shrink-0 p-2 text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-800 rounded transition-colors"
                           title="Download"
                         >
-                          <ArrowDownTrayIcon aria-hidden="true" className="w-4 h-4" />
+                          <ArrowDownTrayIcon
+                            aria-hidden="true"
+                            className="w-4 h-4"
+                          />
                         </a>
                       </div>
                     </div>

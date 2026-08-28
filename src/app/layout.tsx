@@ -28,8 +28,8 @@ export const metadata: Metadata = {
   description:
     "Fast, secure, and free online image tools. Convert formats (JPG, PNG, WebP, AVIF, SVG, ICO), remove backgrounds with AI, upscale, blur & censor, compress, resize, crop, and convert PDF to images directly in your browser.",
   applicationName: "Image Converter",
-  authors: [{ name: "Image Converter Team", url: SITE_URL }],
-  generator: "Next.js",
+  authors: [{ name: "Ketan Kawade", url: SITE_URL }],
+  generator: "Ketan Kawade",
   keywords: [
     "image converter",
     "online image converter",
@@ -57,8 +57,8 @@ export const metadata: Metadata = {
     "free image editor",
     "browser image tools",
   ],
-  creator: "Image Converter",
-  publisher: "Image Converter",
+  creator: "Ketan Kawade",
+  publisher: "Ketan Kawade",
   formatDetection: {
     email: false,
     address: false,

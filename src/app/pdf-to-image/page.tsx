@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useRef, DragEvent, useEffect } from "react";
-import Link from "next/link";
-import ThemeToggle from "../components/ThemeToggle";
+import { useState, useEffect } from "react";
+import ToolHeader from "../components/ToolHeader";
+import Dropzone from "../components/Dropzone";
 import {
   DocumentIcon,
   ArrowDownTrayIcon,
   Cog6ToothIcon,
   ExclamationCircleIcon,
   ArrowPathIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { ChevronsLeft } from "lucide-react";
 import JSZip from "jszip";
 
 // PDF.js UMD types
@@ -45,18 +45,28 @@ const loadPdfJs = async () => {
     const script = document.createElement("script");
     script.src =
       "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    script.async = true;
     script.onload = () => {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-      resolve(window.pdfjsLib);
+      if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        resolve(window.pdfjsLib);
+      } else {
+        reject(new Error("Failed to load PDF.js library"));
+      }
     };
-    script.onerror = (e) =>
-      reject(new Error("Failed to load PDF.js script: " + e));
-    document.head.appendChild(script);
+    script.onerror = () => reject(new Error("Failed to load PDF.js script"));
+    document.body.appendChild(script);
   });
 
   return pdfJsPromise;
 };
+
+interface PdfPageInfo {
+  name: string;
+  size: number;
+  totalPages: number;
+}
 
 const parsePageRange = (rangeStr: string, maxPages: number): number[] => {
   if (!rangeStr.trim()) {
@@ -92,31 +102,13 @@ const parsePageRange = (rangeStr: string, maxPages: number): number[] => {
   return Array.from(pages).sort((a, b) => a - b);
 };
 
-export default function PdfToImage() {
+export default function PdfToImagePage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [pdfInfo, setPdfInfo] = useState<{
-    name: string;
-    size: number;
-    totalPages: number;
-  } | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [pdfInfo, setPdfInfo] = useState<PdfPageInfo | null>(null);
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [conversionProgress, setConversionProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Check if mobile on mount and resize
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   // Conversion Options
   const [outputFormat, setOutputFormat] = useState("png");
@@ -134,8 +126,6 @@ export default function PdfToImage() {
   const [zipDownloadUrl, setZipDownloadUrl] = useState<string | null>(null);
   const [zipFileName, setZipFileName] = useState<string | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   // Clean up Object URLs when component unmounts or zip changes
   useEffect(() => {
     return () => {
@@ -144,38 +134,6 @@ export default function PdfToImage() {
       }
     };
   }, [zipDownloadUrl]);
-
-  const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    setError(null);
-
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      processPdfFile(file);
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setError(null);
-    const file = e.target.files?.[0];
-    if (file) {
-      processPdfFile(file);
-    }
-  };
 
   const processPdfFile = async (file: File) => {
     if (
@@ -213,6 +171,16 @@ export default function PdfToImage() {
     } finally {
       setIsLoadingPdf(false);
     }
+  };
+
+  const handleCancel = () => {
+    setPdfFile(null);
+    setPdfInfo(null);
+    setConvertedImages([]);
+    setZipDownloadUrl(null);
+    setError(null);
+    setIsConverting(false);
+    setConversionProgress(0);
   };
 
   const handleConvert = async () => {
@@ -330,38 +298,16 @@ export default function PdfToImage() {
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <div className="sticky top-0 z-10 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center min-w-[70px]">
-            <Link
-              href="/"
-              className="flex items-center gap-1.5 text-base font-semibold text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              <ChevronsLeft className="w-5 h-5" />
-              <span>Home</span>
-            </Link>
-          </div>
-          <div className="text-center px-2">
-            <h1 className="text-xl md:text-2xl font-bold flex items-center justify-center gap-2">
-              <DocumentIcon className="w-6 h-6 text-blue-500 shrink-0" />
-              <span className="bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                PDF to Image Converter
-              </span>
-            </h1>
-            <p className="font-medium text-xs md:text-sm text-gray-950 dark:text-white">
-              Convert your PDF document pages into high-quality images locally in your browser
-            </p>
-          </div>
-          <div className="flex items-center justify-end min-w-[70px]">
-            <ThemeToggle />
-          </div>
-        </div>
-      </div>
+      <ToolHeader
+        title="PDF to Image Converter"
+        subtitle="Convert your PDF document pages into high-quality images"
+        gradient="from-blue-600 to-cyan-600"
+      />
 
       <div className="max-w-4xl mx-auto px-4 py-4 md:px-8 md:py-8">
         {/* Error Display */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md flex items-start gap-3">
             <ExclamationCircleIcon className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm font-semibold text-red-700 dark:text-red-300">{error}</p>
@@ -377,67 +323,22 @@ export default function PdfToImage() {
 
         {/* Upload Drop Zone */}
         {!pdfFile && (
-          <div className="mb-4 md:mb-8">
-            <div
-              onDrop={handleDrop}
-              onDragOver={(e) => e.preventDefault()}
-              onDragEnter={handleDragEnter}
-              onDragLeave={handleDragLeave}
-              onClick={() => fileInputRef.current?.click()}
-              className={`
-                relative w-full p-6 md:p-8 mb-4 border-3 border-dashed rounded-2xl
-                transition-all duration-300 cursor-pointer
-                ${
-                  isDragging
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-102 shadow-lg"
-                    : "border-gray-300 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-gray-900 hover:shadow-md"
-                }
-              `}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                aria-label="Upload PDF file"
-                accept=".pdf,application/pdf"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-
-              <div className="text-center">
-                <DocumentIcon
-                  aria-hidden="true"
-                  className={`w-12 h-12 md:w-20 md:h-20 mx-auto mb-2 md:mb-4 transition-all duration-300 ${
-                    isDragging
-                      ? "text-blue-500 scale-110"
-                      : "text-gray-500 dark:text-gray-400"
-                  }`}
-                />
-                <p className="text-base md:text-xl font-bold text-gray-950 dark:text-white mb-1 md:mb-2">
-                  {isDragging
-                    ? "Drop PDF file here"
-                    : isMobile
-                      ? "Tap to upload"
-                      : "Drag & drop your PDF file here"}
-                </p>
-                <p className="text-xs md:text-sm font-medium text-gray-950 dark:text-white mb-3 md:mb-4">
-                  Supports: PDF documents (Max 50MB)
-                </p>
-                <div className="flex flex-col sm:flex-row justify-center gap-2 md:gap-3">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      fileInputRef.current?.click();
-                    }}
-                    className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 text-white text-sm md:text-base font-semibold rounded-xl active:bg-blue-700 hover:bg-blue-700 transition-colors shadow-md active:shadow-lg"
-                  >
-                    <DocumentIcon className="w-4 h-4 md:w-5 md:h-5" />
-                    <span>Choose PDF File</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <Dropzone
+            onFilesSelected={(files) => {
+              if (files[0]) {
+                setError(null);
+                processPdfFile(files[0]);
+              }
+            }}
+            accept=".pdf,application/pdf"
+            icon={DocumentIcon}
+            title="Drag & drop your PDF file here"
+            dragTitle="Drop PDF file here"
+            buttonLabel="Choose PDF File"
+            buttonIcon={<DocumentIcon className="w-4 h-4 md:w-5 md:h-5" />}
+            ariaLabel="Upload PDF file"
+            subtitle="Supports: PDF documents (Max 50MB)"
+          />
         )}
 
         {/* Configuration settings & processing overview */}
@@ -445,7 +346,7 @@ export default function PdfToImage() {
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-4 md:p-6 mb-6">
             {/* Header info */}
             <div className="flex items-center gap-3 pb-4 mb-6 border-b border-gray-100 dark:border-gray-800">
-              <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-md bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
                 <DocumentIcon aria-hidden="true" className="w-7 h-7 text-red-600 dark:text-red-400" />
               </div>
               <div className="flex-1 min-w-0">
@@ -470,7 +371,7 @@ export default function PdfToImage() {
                   aria-label="Output image format"
                   value={outputFormat}
                   onChange={(e) => setOutputFormat(e.target.value)}
-                  className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium rounded-md p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                 >
                   <option value="png">PNG - Lossless (Recommended)</option>
                   <option value="jpg">JPEG - Best for smaller file size</option>
@@ -493,7 +394,7 @@ export default function PdfToImage() {
                       key={opt.val}
                       type="button"
                       onClick={() => setScale(opt.val)}
-                      className={`p-2.5 rounded-xl border text-center transition-all ${
+                      className={`p-2.5 rounded-md border text-center transition-all ${
                         scale === opt.val
                           ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 font-bold"
                           : "border-gray-250 dark:border-gray-700 text-gray-950 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 font-semibold"
@@ -546,7 +447,7 @@ export default function PdfToImage() {
                     value={pageRange}
                     onChange={(e) => setPageRange(e.target.value)}
                     placeholder="e.g. 1, 3, 5-8"
-                    className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium rounded-md p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                   />
                   <p className="text-xs font-medium text-gray-950 dark:text-white mt-2">
                     Enter comma-separated page numbers or ranges (e.g. 1, 3,
@@ -558,13 +459,23 @@ export default function PdfToImage() {
 
             {/* Convert Trigger Button */}
             {!isConverting && convertedImages.length === 0 && (
-              <button
-                onClick={handleConvert}
-                className="w-full py-3.5 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold rounded-xl transition-all shadow-md active:scale-99 flex items-center justify-center gap-2"
-              >
-                <Cog6ToothIcon aria-hidden="true" className="w-5 h-5" />
-                <span>Convert PDF to Images</span>
-              </button>
+              <div className="flex gap-3 items-center">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="flex-1 px-5 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold rounded-md transition-all active:scale-98 flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-700 cursor-pointer shadow-sm text-sm md:text-base"
+                >
+                  <XMarkIcon aria-hidden="true" className="w-5 h-5" />
+                  <span>Cancel</span>
+                </button>
+                <button
+                  onClick={handleConvert}
+                  className="flex-1 px-5 py-3 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold rounded-md transition-all shadow-md active:scale-99 flex items-center justify-center gap-2 cursor-pointer text-sm md:text-base"
+                >
+                  <Cog6ToothIcon aria-hidden="true" className="w-5 h-5" />
+                  <span>Convert PDF to Images</span>
+                </button>
+              </div>
             )}
 
             {/* Rendering Progress Bar */}
@@ -618,7 +529,7 @@ export default function PdfToImage() {
                     href={zipDownloadUrl}
                     download={zipFileName}
                     aria-label={`Download all ${convertedImages.length} converted images as ZIP`}
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold shadow-md transition-colors"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-semibold shadow-md transition-colors"
                   >
                     <ArrowDownTrayIcon aria-hidden="true" className="w-4 h-4" />
                     Download All as ZIP
@@ -626,7 +537,7 @@ export default function PdfToImage() {
                 )}
                 <button
                   onClick={clearAll}
-                  className="flex-1 sm:flex-none px-5 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-950 dark:text-white rounded-xl text-sm font-semibold transition-colors"
+                  className="flex-1 sm:flex-none px-5 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-950 dark:text-white rounded-md text-sm font-semibold transition-colors"
                 >
                   Convert Another
                 </button>
