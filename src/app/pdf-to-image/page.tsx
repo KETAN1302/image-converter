@@ -301,7 +301,6 @@ export default function PdfToImagePage() {
       <ToolHeader
         title="PDF to Image Converter"
         subtitle="Convert your PDF document pages into high-quality images"
-        gradient="from-blue-600 to-cyan-600"
       />
 
       <div className="max-w-4xl mx-auto px-4 py-4 md:px-8 md:py-8">
@@ -397,11 +396,11 @@ export default function PdfToImagePage() {
                       className={`p-2.5 rounded-md border text-center transition-all ${
                         scale === opt.val
                           ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 font-bold"
-                          : "border-gray-250 dark:border-gray-700 text-gray-950 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 font-semibold"
+                          : "border-gray-200 dark:border-gray-700 text-gray-950 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 font-semibold"
                       }`}
                     >
                       <div className="text-sm">{opt.label}</div>
-                      <div className="text-[10px] opacity-80 font-medium">
+                      <div className="text-gray-900 dark:text-white text-xs font-medium">
                         {opt.desc}
                       </div>
                     </button>
@@ -470,10 +469,10 @@ export default function PdfToImagePage() {
                 </button>
                 <button
                   onClick={handleConvert}
-                  className="flex-1 px-5 py-3 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold rounded-md transition-all shadow-md active:scale-99 flex items-center justify-center gap-2 cursor-pointer text-sm md:text-base"
+                  className="flex-1 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-md transition-all shadow-md active:scale-99 flex items-center justify-center gap-2 cursor-pointer text-sm md:text-base"
                 >
                   <Cog6ToothIcon aria-hidden="true" className="w-5 h-5" />
-                  <span>Convert PDF to Images</span>
+                  <span>Convert</span>
                 </button>
               </div>
             )}

@@ -350,7 +350,6 @@ export default function UpscalePage() {
       <ToolHeader
         title="AI Image Upscaler"
         subtitle="Enlarge & enhance resolution with smart super-resolution"
-        gradient="from-blue-600 to-cyan-600"
       />
 
       <div className="max-w-4xl mx-auto px-4 py-4 md:px-8 md:py-8">

@@ -414,7 +414,6 @@ export default function CropImage() {
       <ToolHeader
         title="Image Cropper"
         subtitle="Select the area you want to keep from your image"
-        gradient="from-blue-600 to-cyan-600"
       />
 
       <div className="max-w-4xl mx-auto px-4 py-4 md:px-8 md:py-8">
@@ -897,7 +896,7 @@ export default function CropImage() {
                 className="flex-1 px-5 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold rounded-md transition-colors flex items-center justify-center gap-2 shadow-md cursor-pointer text-sm md:text-base"
               >
                 <ScissorsIcon aria-hidden="true" className="w-5 h-5" />
-                <span>{loading ? "Processing..." : "Crop Image"}</span>
+                <span>{loading ? "Processing..." : "Crop"}</span>
               </button>
             </div>
           </div>

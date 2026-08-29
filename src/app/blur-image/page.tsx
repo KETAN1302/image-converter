@@ -307,7 +307,6 @@ export default function BlurImagePage() {
       <ToolHeader
         title="Blur & Censor Image"
         subtitle="Censor faces, license plates, text, and confidential areas"
-        gradient="from-blue-600 to-cyan-600"
       />
 
       <div className="max-w-4xl mx-auto px-4 py-4 md:px-8 md:py-8">
@@ -447,8 +446,8 @@ export default function BlurImagePage() {
                       }
                       className={`p-2.5 text-center rounded-md border transition-all cursor-pointer ${
                         censorStyle === style.id
-                          ? "border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 ring-2 ring-blue-500/20"
-                          : "border-gray-250 dark:border-gray-700 text-gray-950 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
+                          ? "border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                          : "border-gray-200 dark:border-gray-700 text-gray-950 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
                       }`}
                     >
                       <div className="text-xs md:text-sm font-bold">
@@ -596,7 +595,7 @@ export default function BlurImagePage() {
                 className="flex-1 py-3.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-md shadow-md active:scale-99 transition-all flex items-center justify-center gap-2 cursor-pointer text-sm md:text-base"
               >
                 <ArrowDownTrayIcon aria-hidden="true" className="w-5 h-5" />
-                <span>Download Blurred Image</span>
+                <span>Download</span>
               </button>
             </div>
           </div>

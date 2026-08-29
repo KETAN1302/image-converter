@@ -300,7 +300,6 @@ export default function RemoveBackgroundPage() {
       <ToolHeader
         title="Remove Background"
         subtitle="Remove background with AI — 100% free & private in your browser"
-        gradient="from-blue-600 to-purple-600"
       />
 
       <div className="max-w-4xl mx-auto px-4 py-4 md:px-8 md:py-8">
@@ -383,7 +382,7 @@ export default function RemoveBackgroundPage() {
                   </div>
                   <div className="h-2.5 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-linear-to-r from-blue-600 to-purple-600 rounded-full transition-all duration-300"
+                      className="h-full bg-blue-600 rounded-full transition-all duration-300"
                       style={{ width: `${Math.max(progressPercent, 8)}%` }}
                     />
                   </div>
@@ -403,10 +402,10 @@ export default function RemoveBackgroundPage() {
                   </button>
                   <button
                     onClick={handleRemoveBackground}
-                    className="flex-1 px-5 py-3 md:px-8 md:py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold text-sm md:text-base rounded-md shadow-md hover:shadow-lg active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="flex-1 px-5 py-3 md:px-8 md:py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm md:text-base rounded-md shadow-md hover:shadow-lg active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <SparklesIcon className="w-5 h-5" />
-                    <span>Remove Background with AI</span>
+                    <span>Remove Background</span>
                   </button>
                 </div>
               )}

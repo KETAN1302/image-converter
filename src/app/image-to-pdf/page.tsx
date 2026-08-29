@@ -145,7 +145,6 @@ export default function PdfConverter() {
       <ToolHeader
         title="Image to PDF Converter"
         subtitle="Convert your images to PDF documents"
-        gradient="from-blue-600 to-cyan-600"
       />
 
       <div className="max-w-4xl mx-auto px-4 py-4 md:px-8 md:py-8">
@@ -345,7 +344,7 @@ export default function PdfConverter() {
               <button
                 onClick={handleConvert}
                 disabled={isConverting}
-                className="flex-1 px-5 py-3 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-gray-300 disabled:to-gray-300 dark:disabled:from-gray-800 dark:disabled:to-gray-800 disabled:text-gray-500 text-white font-bold rounded-md transition-all shadow-md active:scale-99 flex items-center justify-center gap-2 cursor-pointer text-sm md:text-base"
+                className="flex-1 px-5 py-3 bg-blue-600 hover:bg-blue-700 disabled:from-gray-300 disabled:to-gray-300 dark:disabled:from-gray-800 dark:disabled:to-gray-800 disabled:text-gray-500 text-white font-bold rounded-md transition-all shadow-md active:scale-99 flex items-center justify-center gap-2 cursor-pointer text-sm md:text-base"
               >
                 {isConverting ? (
                   <>
@@ -355,7 +354,7 @@ export default function PdfConverter() {
                 ) : (
                   <>
                     <DocumentTextIcon aria-hidden="true" className="w-5 h-5" />
-                    <span>Create PDF ({files.length} images)</span>
+                    <span>Create PDF</span>
                   </>
                 )}
               </button>

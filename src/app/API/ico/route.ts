@@ -6,6 +6,15 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 export const runtime = "nodejs";
 
+const SIZE_LABELS: Record<number, string> = {
+  16: "Favicon",
+  32: "Browser tab",
+  48: "Desktop shortcut",
+  64: "High DPI icon",
+  128: "Large preview",
+  256: "Extra large icon",
+};
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
@@ -55,12 +64,11 @@ export async function POST(req: NextRequest) {
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Process each size
-    const images = await Promise.all(
+    // Process each size and create both PNG buffer and individual ICO buffer
+    const iconResults = await Promise.all(
       sizes.map(async (size) => {
         try {
-          // Ensure alpha channel and clean transparency
-          const imageBuffer = await sharp(buffer)
+          const pngBuffer = await sharp(buffer)
             .rotate()
             .resize(size, size, {
               fit: "contain",
@@ -77,7 +85,17 @@ export async function POST(req: NextRequest) {
             })
             .toBuffer();
 
-          return imageBuffer;
+          const icoBuffer = await toIco([pngBuffer], {
+            resize: false,
+            sizes: [size],
+          });
+
+          return {
+            size,
+            label: SIZE_LABELS[size] || `${size}x${size}`,
+            pngBuffer,
+            icoBuffer,
+          };
         } catch (err) {
           console.error(`Error processing size ${size}:`, err);
           throw err;
@@ -85,21 +103,33 @@ export async function POST(req: NextRequest) {
       })
     );
 
-    // Convert to ICO format
-    const icoBuffer = await toIco(images, {
+    // Generate combined multi-resolution ICO containing all selected sizes
+    const allPngBuffers = iconResults.map((r) => r.pngBuffer);
+    const combinedIcoBuffer = await toIco(allPngBuffers, {
       resize: false,
       sizes: sizes,
     });
 
-    const body = new Uint8Array(icoBuffer);
-    const filename = `icon_${sizes.join("x")}_32bit.ico`;
+    const icons = iconResults.map((item) => ({
+      size: item.size,
+      label: item.label,
+      icoName: `favicon${item.size}x${item.size}.ico`,
+      icoBase64: item.icoBuffer.toString("base64"),
+      icoSize: item.icoBuffer.length,
+      pngName: `favicon${item.size}x${item.size}.png`,
+      pngBase64: item.pngBuffer.toString("base64"),
+      pngSize: item.pngBuffer.length,
+    }));
 
-    return new NextResponse(body, {
-      headers: {
-        "Content-Type": "image/x-icon",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-        "Content-Length": body.length.toString(),
+    return NextResponse.json({
+      success: true,
+      baseName: "favicon",
+      combinedIco: {
+        name: "favicon-multisize.ico",
+        base64: combinedIcoBuffer.toString("base64"),
+        size: combinedIcoBuffer.length,
       },
+      icons,
     });
   } catch (error) {
     console.error("ICO conversion error:", error);
@@ -117,7 +147,7 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     message: "Image to ICO API",
-    version: "1.0",
+    version: "2.0",
     maxDuration: "60s",
     supportedSizes: [16, 32, 48, 64, 128, 256],
   });

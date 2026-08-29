@@ -42,11 +42,12 @@ export async function POST(request: NextRequest) {
     if (keepAspectRatio) {
       sharpInstance = sharpInstance.resize(width, height, {
         fit: "inside",
-        withoutEnlargement: true,
+        withoutEnlargement: false,
       });
     } else {
       sharpInstance = sharpInstance.resize(width, height, {
         fit: "fill",
+        withoutEnlargement: false,
       });
     }
 

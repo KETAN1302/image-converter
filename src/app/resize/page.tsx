@@ -15,6 +15,9 @@ interface ResizedFile {
   name: string;
   data: string;
   preview?: string;
+  width?: number;
+  height?: number;
+  size?: number;
 }
 
 export default function ResizeImage() {
@@ -72,24 +75,31 @@ export default function ResizeImage() {
   };
 
   const handleWidthChange = (value: number) => {
-    setWidth(value);
-    if (keepAspect && originalDimensions.width > 0) {
+    const validValue = isNaN(value) ? 0 : value;
+    setWidth(validValue);
+    if (keepAspect && originalDimensions.width > 0 && validValue > 0) {
       const ratio = originalDimensions.height / originalDimensions.width;
-      setHeight(Math.round(value * ratio));
+      setHeight(Math.round(validValue * ratio));
     }
   };
 
   const handleHeightChange = (value: number) => {
-    setHeight(value);
-    if (keepAspect && originalDimensions.height > 0) {
+    const validValue = isNaN(value) ? 0 : value;
+    setHeight(validValue);
+    if (keepAspect && originalDimensions.height > 0 && validValue > 0) {
       const ratio = originalDimensions.width / originalDimensions.height;
-      setWidth(Math.round(value * ratio));
+      setWidth(Math.round(validValue * ratio));
     }
   };
 
   const resizeImage = async () => {
     if (!file) {
       setError("Please upload an image first");
+      return;
+    }
+
+    if (width <= 0 || height <= 0) {
+      setError("Please enter valid width and height dimensions greater than 0");
       return;
     }
 
@@ -114,15 +124,22 @@ export default function ResizeImage() {
 
       const blob = await response.blob();
 
-      // Create preview data URL for result
+      // Create preview data URL for result and read actual dimensions
       const reader = new FileReader();
       reader.onload = (event) => {
         const data = event.target?.result as string;
-        setResult({
-          name: `resized-${file.name}`,
-          data,
-          preview,
-        });
+        const img = new window.Image();
+        img.onload = () => {
+          setResult({
+            name: `resized-${file.name}`,
+            data,
+            preview,
+            width: img.width,
+            height: img.height,
+            size: blob.size,
+          });
+        };
+        img.src = data;
       };
       reader.readAsDataURL(blob);
     } catch (error) {
@@ -166,7 +183,6 @@ export default function ResizeImage() {
       <ToolHeader
         title="Image Resizer"
         subtitle="Resize your images to perfect dimensions"
-        gradient="from-blue-600 to-cyan-600"
       />
 
       <div className="max-w-4xl mx-auto px-4 py-4 md:px-8 md:py-8">
@@ -396,7 +412,7 @@ export default function ResizeImage() {
                     {result.name}
                   </p>
                   <p className="text-xs font-medium text-gray-950 dark:text-white">
-                    {width} × {height}px
+                    {result.width || width} × {result.height || height}px {result.size ? `• ${(result.size / 1024).toFixed(1)} KB` : ""}
                   </p>
                 </div>
               </div>

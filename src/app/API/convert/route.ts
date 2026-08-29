@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
         if (width || height) {
           image = image.resize(width, height, {
             fit: "inside",
-            withoutEnlargement: true,
+            withoutEnlargement: false,
           });
         }
 

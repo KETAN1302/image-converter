@@ -19,7 +19,6 @@ export default function ToolHeader({
   subtitle,
   backHref = "/",
   backLabel = "Back to Home",
-  gradient = "from-blue-600 to-cyan-600",
   className = "",
 }: ToolHeaderProps) {
   return (
@@ -41,7 +40,7 @@ export default function ToolHeader({
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h1
-                className={`text-lg sm:text-xl md:text-2xl font-bold bg-linear-to-r ${gradient} bg-clip-text text-transparent truncate`}
+                className={`text-lg sm:text-xl md:text-2xl font-bold bg-blue-600 bg-clip-text text-transparent truncate`}
               >
                 {title}
               </h1>

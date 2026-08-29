@@ -9,6 +9,7 @@ import {
   ExclamationCircleIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { LiaCompressArrowsAltSolid } from "react-icons/lia";
 
 interface CompressedFile {
   name: string;
@@ -136,7 +137,6 @@ export default function CompressImage() {
       <ToolHeader
         title="Image Compressor"
         subtitle="Reduce image file sizes with smart compression"
-        gradient="from-blue-600 to-cyan-600"
       />
 
       <div className="max-w-4xl mx-auto px-4 py-4 md:px-8 md:py-8">
@@ -309,8 +309,8 @@ export default function CompressImage() {
                 </>
               ) : (
                 <>
-                  <ArrowDownTrayIcon aria-hidden="true" className="w-5 h-5" />
-                  <span>Compress & Download</span>
+                  <LiaCompressArrowsAltSolid aria-hidden="true" className="w-5 h-5" />
+                  <span>Compress</span>
                 </>
               )}
             </button>

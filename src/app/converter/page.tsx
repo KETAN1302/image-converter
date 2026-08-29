@@ -297,7 +297,6 @@ export default function Home() {
       <ToolHeader
         title="Image Converter"
         subtitle="Convert and optimize your images"
-        gradient="from-blue-600 to-purple-600"
       />
 
       <div className="max-w-4xl mx-auto px-4 py-4 md:px-8 md:py-8">
@@ -580,7 +579,7 @@ export default function Home() {
                   <ArrowDownTrayIcon aria-hidden="true" className="w-5 h-5" />
                   <span>
                     {files.length > 0
-                      ? `Convert ${files.length} ${files.length === 1 ? "Image" : "Images"}`
+                      ? "Convert"
                       : "Select Images"}
                   </span>
                 </>
