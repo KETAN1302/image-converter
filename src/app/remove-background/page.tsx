@@ -65,7 +65,7 @@ export default function RemoveBackgroundPage() {
     setOriginalPreview(preview);
   };
 
-  // Normalize input image (converts AVIF, WebP, SVG, BMP, etc. to standard PNG Blob)
+  // Normalize and optimize input image resolution for ultra-fast AI inference
   const prepareImageForSegmentation = async (
     sourceFile: File,
     previewUrl: string,
@@ -75,15 +75,31 @@ export default function RemoveBackgroundPage() {
       img.crossOrigin = "anonymous";
       img.onload = () => {
         try {
+          const maxDim = 1200; // Optimal neural network inference size
+          let w = img.naturalWidth || img.width;
+          let h = img.naturalHeight || img.height;
+
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+
           const canvas = document.createElement("canvas");
-          canvas.width = img.naturalWidth || img.width;
-          canvas.height = img.naturalHeight || img.height;
+          canvas.width = Math.max(1, w);
+          canvas.height = Math.max(1, h);
           const ctx = canvas.getContext("2d", { willReadFrequently: true });
           if (!ctx) {
             resolve(sourceFile);
             return;
           }
-          ctx.drawImage(img, 0, 0);
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(img, 0, 0, w, h);
           canvas.toBlob((blob) => {
             if (blob) {
               resolve(blob);
@@ -96,7 +112,6 @@ export default function RemoveBackgroundPage() {
         }
       };
       img.onerror = () => {
-        // If <img> fails to load directly, fallback to passing sourceFile
         resolve(sourceFile);
       };
       img.src = previewUrl;
@@ -111,19 +126,20 @@ export default function RemoveBackgroundPage() {
     setError(null);
     setProgressPercent(5);
     try {
-      setProgressStatus("Preparing image format...");
+      setProgressStatus("Optimizing image for AI segmentation...");
       const inputBlob = await prepareImageForSegmentation(file, originalPreview);
 
       // Dynamically import @imgly/background-removal on the client side
       const { removeBackground } = await import("@imgly/background-removal");
 
-      setProgressStatus("Downloading AI model & segmenting subject...");
+      setProgressStatus("Running AI neural network...");
       const blob = await removeBackground(inputBlob, {
         publicPath:
           "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/",
+        model: "isnet_fp16",
         output: {
           format: "image/png",
-          quality: 1.0,
+          quality: 0.95,
         },
         debug: false,
         progress: (key: string, current: number, total: number) => {
@@ -131,7 +147,7 @@ export default function RemoveBackgroundPage() {
             const pct = Math.round((current / total) * 100);
             setProgressPercent(pct);
             if (key.includes("fetch")) {
-              setProgressStatus(`Loading AI neural network... ${pct}%`);
+              setProgressStatus(`Downloading lightweight AI model... ${pct}%`);
             } else if (key.includes("compute")) {
               setProgressStatus(`Extracting foreground subject... ${pct}%`);
             } else {
