@@ -113,28 +113,42 @@ export async function POST(req: NextRequest) {
             break;
           case "avif":
             output = await image
-              .avif({ quality: Math.min(quality, 100), effort: 4 })
+              .avif({
+                quality: Math.min(quality, 100),
+                effort: 2,
+                chromaSubsampling: "4:2:0",
+              })
               .toBuffer();
             break;
           case "gif":
-            output = await image.gif().toBuffer();
+            output = await image.gif({ effort: 3 }).toBuffer();
             break;
           case "tiff":
             output = await image
-              .tiff({ quality: Math.min(quality, 100) })
+              .tiff({
+                quality: Math.min(quality, 100),
+                compression: "deflate",
+              })
               .toBuffer();
             break;
           case "heic":
           case "heif":
-            output = await image
-              .heif({ quality: Math.min(quality, 100), compression: "av1" })
-              .toBuffer();
+            try {
+              output = await image
+                .heif({ quality: Math.min(quality, 100), compression: "av1" })
+                .toBuffer();
+            } catch {
+              output = await image
+                .avif({ quality: Math.min(quality, 100), effort: 2 })
+                .toBuffer();
+            }
             break;
           case "svg": {
-            // Convert to PNG buffer first, then wrap as inline base64 in SVG XML template
             const pngBuffer = await image.png({ compressionLevel: 9 }).toBuffer();
             const pngBase64 = pngBuffer.toString("base64");
-            const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${metadata.width || 800}" height="${metadata.height || 600}" viewBox="0 0 ${metadata.width || 800} ${metadata.height || 600}">
+            const svgWidth = metadata.width || width || 800;
+            const svgHeight = metadata.height || height || 600;
+            const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">
   <image href="data:image/png;base64,${pngBase64}" width="100%" height="100%"/>
 </svg>`;
             output = Buffer.from(svgContent, "utf-8");
@@ -153,6 +167,10 @@ export async function POST(req: NextRequest) {
           mime = "jpeg";
         } else if (fmt === "svg") {
           mime = "svg+xml";
+        } else if (fmt === "heic" || fmt === "heif") {
+          mime = "heic";
+        } else if (fmt === "tiff") {
+          mime = "tiff";
         }
 
         let extension = fmt;
@@ -165,11 +183,17 @@ export async function POST(req: NextRequest) {
 
         // Generate JPEG preview for formats that web browsers cannot natively render (HEIC/TIFF)
         let preview: string | undefined = undefined;
-        if (fmt === "heic" || fmt === "heif" || fmt === "tiff") {
-          const previewBuffer = await image
-            .jpeg({ quality: 60 })
-            .toBuffer();
-          preview = `data:image/jpeg;base64,${previewBuffer.toString("base64")}`;
+        if (fmt === "heic" || fmt === "heif" || fmt === "tiff" || fmt === "avif") {
+          try {
+            const previewBuffer = await sharp(buffer)
+              .rotate()
+              .resize(400, 400, { fit: "inside", withoutEnlargement: true })
+              .jpeg({ quality: 75 })
+              .toBuffer();
+            preview = `data:image/jpeg;base64,${previewBuffer.toString("base64")}`;
+          } catch {
+            // Preview fallback
+          }
         }
 
         return {
@@ -179,7 +203,7 @@ export async function POST(req: NextRequest) {
         };
       } catch (fileError) {
         console.error(`Error processing file ${file.name}:`, fileError);
-        return null;
+        throw fileError;
       }
     };
 

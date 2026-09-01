@@ -194,6 +194,27 @@ export default function Home() {
         ctx.imageSmoothingQuality = "high";
 
         const fmt = targetFormat.toLowerCase();
+        const originalName = file.name.split(".").slice(0, -1).join(".") || "image";
+
+        // Direct client-side SVG generation
+        if (fmt === "svg") {
+          ctx.drawImage(img, 0, 0, finalW, finalH);
+          const pngDataUrl = canvas.toDataURL("image/png");
+          const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${finalW}" height="${finalH}" viewBox="0 0 ${finalW} ${finalH}">
+  <image href="${pngDataUrl}" width="100%" height="100%"/>
+</svg>`;
+          const svgBlob = new Blob([svgContent], { type: "image/svg+xml" });
+          resolve({
+            name: `${originalName}.svg`,
+            data: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`,
+            preview: pngDataUrl,
+            size: svgBlob.size,
+            width: finalW,
+            height: finalH,
+          });
+          return;
+        }
+
         let mimeType = "image/jpeg";
         let extension = "jpg";
 
@@ -225,7 +246,6 @@ export default function Home() {
             const reader = new FileReader();
             reader.onload = (e) => {
               const dataUrl = e.target?.result as string;
-              const originalName = file.name.split(".").slice(0, -1).join(".") || "image";
               resolve({
                 name: `${originalName}.${extension}`,
                 data: dataUrl,
@@ -283,11 +303,11 @@ export default function Home() {
       });
     }, tickMs);
 
-    const isClientSupportedFormat = ["png", "jpg", "jpeg", "webp"].includes(fmt);
+    const isClientSupportedFormat = ["png", "jpg", "jpeg", "webp", "svg"].includes(fmt);
 
     try {
       if (isClientSupportedFormat) {
-        // 1. Client-Side High-Speed Conversion (0ms network delay, no 4.5MB Vercel limit)
+        // 1. Client-Side High-Speed Conversion (PNG, JPG, WebP, SVG)
         const converted = await Promise.all(
           files.map((file) =>
             convertSingleFileClient(file, fmt, targetW, targetH, targetQual)
@@ -296,7 +316,7 @@ export default function Home() {
         setResults(converted);
         setConvertProgress(100);
       } else {
-        // 2. Server API Conversion for special formats (AVIF, TIFF, GIF, ICO, BMP)
+        // 2. Server API Conversion for special formats (AVIF, TIFF, GIF, HEIC)
         const convertedResults: ConvertedFile[] = [];
 
         // Process files individually to stay well under Vercel's 4.5MB payload limit
@@ -304,9 +324,9 @@ export default function Home() {
           const singleFormData = new FormData();
           singleFormData.append("files", file);
           singleFormData.append("format", format);
-          if (width) singleFormData.append("width", width);
-          if (height) singleFormData.append("height", height);
-          singleFormData.append("quality", quality);
+          if (targetW) singleFormData.append("width", String(targetW));
+          if (targetH) singleFormData.append("height", String(targetH));
+          singleFormData.append("quality", String(targetQual));
 
           const res = await fetch("/api/convert", {
             method: "POST",
@@ -315,7 +335,7 @@ export default function Home() {
 
           if (!res.ok) {
             const rawText = await res.text().catch(() => "");
-            let errorMsg = "Conversion failed";
+            let errorMsg = `Conversion to ${format.toUpperCase()} failed`;
             try {
               const parsed = JSON.parse(rawText);
               if (parsed?.error) errorMsg = parsed.error;
@@ -349,24 +369,11 @@ export default function Home() {
       }
     } catch (error: unknown) {
       console.error("Conversion failed:", error);
-      // If server failed for any reason, attempt client-side fallback
-      try {
-        console.warn("Attempting client-side fallback conversion...");
-        const fallbackFormat = ["png", "jpg", "jpeg", "webp"].includes(fmt) ? fmt : "png";
-        const fallbackResults = await Promise.all(
-          files.map((file) =>
-            convertSingleFileClient(file, fallbackFormat, targetW, targetH, targetQual)
-          )
-        );
-        setResults(fallbackResults);
-        setConvertProgress(100);
-      } catch {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Conversion failed. Please try again.";
-        setError(message);
-      }
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Conversion failed. Please try again.";
+      setError(message);
     } finally {
       // finalize progress
       if (convertIntervalRef.current) {
