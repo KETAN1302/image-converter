@@ -144,7 +144,9 @@ export async function POST(req: NextRequest) {
             }
             break;
           case "svg": {
-            const pngBuffer = await image.png({ compressionLevel: 9 }).toBuffer();
+            const pngBuffer = await image
+              .png({ compressionLevel: 9 })
+              .toBuffer();
             const pngBase64 = pngBuffer.toString("base64");
             const svgWidth = metadata.width || width || 800;
             const svgHeight = metadata.height || height || 600;
@@ -183,7 +185,12 @@ export async function POST(req: NextRequest) {
 
         // Generate JPEG preview for formats that web browsers cannot natively render (HEIC/TIFF)
         let preview: string | undefined = undefined;
-        if (fmt === "heic" || fmt === "heif" || fmt === "tiff" || fmt === "avif") {
+        if (
+          fmt === "heic" ||
+          fmt === "heif" ||
+          fmt === "tiff" ||
+          fmt === "avif"
+        ) {
           try {
             const previewBuffer = await sharp(buffer)
               .rotate()
@@ -244,6 +251,17 @@ export async function GET() {
     version: "1.0",
     maxFileSize: "50MB",
     maxFiles: 20,
-    supportedFormats: ["png", "jpg", "jpeg", "webp", "avif", "gif", "svg", "heic", "heif", "tiff"],
+    supportedFormats: [
+      "png",
+      "jpg",
+      "jpeg",
+      "webp",
+      "avif",
+      "gif",
+      "svg",
+      "heic",
+      "heif",
+      "tiff",
+    ],
   });
 }

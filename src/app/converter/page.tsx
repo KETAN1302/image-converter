@@ -21,7 +21,6 @@ interface ConvertedFile {
   preview?: string;
 }
 
-
 const isImageFile = (file: File) => {
   return (
     file.type.startsWith("image/") ||
@@ -153,252 +152,260 @@ export default function Home() {
     return true;
   };
 
-// Pure JS Client-Side TIFF Encoder (100% compatible with Photoshop, Windows & macOS)
-function createTiffBlob(canvas: HTMLCanvasElement): Blob {
-  const width = canvas.width;
-  const height = canvas.height;
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  if (!ctx) throw new Error("Failed to get 2d context");
+  // Pure JS Client-Side TIFF Encoder (100% compatible with Photoshop, Windows & macOS)
+  function createTiffBlob(canvas: HTMLCanvasElement): Blob {
+    const width = canvas.width;
+    const height = canvas.height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) throw new Error("Failed to get 2d context");
 
-  const imgData = ctx.getImageData(0, 0, width, height);
-  const rgba = imgData.data;
+    const imgData = ctx.getImageData(0, 0, width, height);
+    const rgba = imgData.data;
 
-  const rgbBytes = new Uint8Array(width * height * 3);
-  let rgbIdx = 0;
-  for (let i = 0; i < rgba.length; i += 4) {
-    rgbBytes[rgbIdx++] = rgba[i];     // R
-    rgbBytes[rgbIdx++] = rgba[i + 1]; // G
-    rgbBytes[rgbIdx++] = rgba[i + 2]; // B
+    const rgbBytes = new Uint8Array(width * height * 3);
+    let rgbIdx = 0;
+    for (let i = 0; i < rgba.length; i += 4) {
+      rgbBytes[rgbIdx++] = rgba[i]; // R
+      rgbBytes[rgbIdx++] = rgba[i + 1]; // G
+      rgbBytes[rgbIdx++] = rgba[i + 2]; // B
+    }
+
+    const numTags = 12;
+    const ifdSize = 2 + numTags * 12 + 4;
+    const headerSize = 8;
+    const resolutionValuesSize = 16;
+    const bitsPerSampleSize = 6;
+    const metaSize =
+      headerSize + ifdSize + resolutionValuesSize + bitsPerSampleSize;
+    const stripOffset = metaSize;
+    const totalSize = stripOffset + rgbBytes.length;
+
+    const buffer = new ArrayBuffer(totalSize);
+    const view = new DataView(buffer);
+    const bytes = new Uint8Array(buffer);
+
+    // Little Endian Header "II"
+    view.setUint8(0, 0x49);
+    view.setUint8(1, 0x49);
+    view.setUint16(2, 42, true);
+    view.setUint32(4, 8, true);
+
+    let ifdOffset = 8;
+    view.setUint16(ifdOffset, numTags, true);
+    ifdOffset += 2;
+
+    const xResOffset = headerSize + ifdSize;
+    const yResOffset = xResOffset + 8;
+    const bitsPerSampleOffset = yResOffset + 8;
+
+    const writeTag = (
+      tag: number,
+      type: number,
+      count: number,
+      valueOrOffset: number,
+    ) => {
+      view.setUint16(ifdOffset, tag, true);
+      view.setUint16(ifdOffset + 2, type, true);
+      view.setUint32(ifdOffset + 4, count, true);
+      view.setUint32(ifdOffset + 8, valueOrOffset, true);
+      ifdOffset += 12;
+    };
+
+    writeTag(256, 4, 1, width);
+    writeTag(257, 4, 1, height);
+    writeTag(258, 3, 3, bitsPerSampleOffset);
+    writeTag(259, 3, 1, 1); // No compression
+    writeTag(262, 3, 1, 2); // RGB
+    writeTag(273, 4, 1, stripOffset);
+    writeTag(277, 3, 1, 3); // 3 samples/pixel
+    writeTag(278, 4, 1, height);
+    writeTag(279, 4, 1, rgbBytes.length);
+    writeTag(282, 5, 1, xResOffset);
+    writeTag(283, 5, 1, yResOffset);
+    writeTag(296, 3, 1, 2); // Inch
+
+    view.setUint32(ifdOffset, 0, true);
+
+    // XResolution 72/1
+    view.setUint32(xResOffset, 72, true);
+    view.setUint32(xResOffset + 4, 1, true);
+
+    // YResolution 72/1
+    view.setUint32(yResOffset, 72, true);
+    view.setUint32(yResOffset + 4, 1, true);
+
+    // BitsPerSample 8, 8, 8
+    view.setUint16(bitsPerSampleOffset, 8, true);
+    view.setUint16(bitsPerSampleOffset + 2, 8, true);
+    view.setUint16(bitsPerSampleOffset + 4, 8, true);
+
+    bytes.set(rgbBytes, stripOffset);
+
+    return new Blob([buffer as unknown as BlobPart], { type: "image/tiff" });
   }
 
-  const numTags = 12;
-  const ifdSize = 2 + numTags * 12 + 4;
-  const headerSize = 8;
-  const resolutionValuesSize = 16;
-  const bitsPerSampleSize = 6;
-  const metaSize = headerSize + ifdSize + resolutionValuesSize + bitsPerSampleSize;
-  const stripOffset = metaSize;
-  const totalSize = stripOffset + rgbBytes.length;
+  // Pure JS Client-Side GIF89a Encoder
+  function createGifBlob(canvas: HTMLCanvasElement): Blob {
+    const width = canvas.width;
+    const height = canvas.height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) throw new Error("Failed to get 2d context");
 
-  const buffer = new ArrayBuffer(totalSize);
-  const view = new DataView(buffer);
-  const bytes = new Uint8Array(buffer);
+    const imgData = ctx.getImageData(0, 0, width, height);
+    const rgbaData = imgData.data;
 
-  // Little Endian Header "II"
-  view.setUint8(0, 0x49);
-  view.setUint8(1, 0x49);
-  view.setUint16(2, 42, true);
-  view.setUint32(4, 8, true);
+    const palette: [number, number, number][] = [];
+    const colorMap = new Map<number, number>();
+    const indexedPixels = new Uint8Array(width * height);
 
-  let ifdOffset = 8;
-  view.setUint16(ifdOffset, numTags, true);
-  ifdOffset += 2;
-
-  const xResOffset = headerSize + ifdSize;
-  const yResOffset = xResOffset + 8;
-  const bitsPerSampleOffset = yResOffset + 8;
-
-  const writeTag = (tag: number, type: number, count: number, valueOrOffset: number) => {
-    view.setUint16(ifdOffset, tag, true);
-    view.setUint16(ifdOffset + 2, type, true);
-    view.setUint32(ifdOffset + 4, count, true);
-    view.setUint32(ifdOffset + 8, valueOrOffset, true);
-    ifdOffset += 12;
-  };
-
-  writeTag(256, 4, 1, width);
-  writeTag(257, 4, 1, height);
-  writeTag(258, 3, 3, bitsPerSampleOffset);
-  writeTag(259, 3, 1, 1); // No compression
-  writeTag(262, 3, 1, 2); // RGB
-  writeTag(273, 4, 1, stripOffset);
-  writeTag(277, 3, 1, 3); // 3 samples/pixel
-  writeTag(278, 4, 1, height);
-  writeTag(279, 4, 1, rgbBytes.length);
-  writeTag(282, 5, 1, xResOffset);
-  writeTag(283, 5, 1, yResOffset);
-  writeTag(296, 3, 1, 2); // Inch
-
-  view.setUint32(ifdOffset, 0, true);
-
-  // XResolution 72/1
-  view.setUint32(xResOffset, 72, true);
-  view.setUint32(xResOffset + 4, 1, true);
-
-  // YResolution 72/1
-  view.setUint32(yResOffset, 72, true);
-  view.setUint32(yResOffset + 4, 1, true);
-
-  // BitsPerSample 8, 8, 8
-  view.setUint16(bitsPerSampleOffset, 8, true);
-  view.setUint16(bitsPerSampleOffset + 2, 8, true);
-  view.setUint16(bitsPerSampleOffset + 4, 8, true);
-
-  bytes.set(rgbBytes, stripOffset);
-
-  return new Blob([buffer as unknown as BlobPart], { type: "image/tiff" });
-}
-
-// Pure JS Client-Side GIF89a Encoder
-function createGifBlob(canvas: HTMLCanvasElement): Blob {
-  const width = canvas.width;
-  const height = canvas.height;
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  if (!ctx) throw new Error("Failed to get 2d context");
-
-  const imgData = ctx.getImageData(0, 0, width, height);
-  const rgbaData = imgData.data;
-
-  const palette: [number, number, number][] = [];
-  const colorMap = new Map<number, number>();
-  const indexedPixels = new Uint8Array(width * height);
-
-  for (let i = 0; i < rgbaData.length; i += 4) {
-    const r = rgbaData[i] & 0xf8;
-    const g = rgbaData[i + 1] & 0xf8;
-    const b = rgbaData[i + 2] & 0xf8;
-    const key = (r << 16) | (g << 8) | b;
-    let idx = colorMap.get(key);
-    if (idx === undefined) {
-      if (palette.length < 256) {
-        idx = palette.length;
-        palette.push([r, g, b]);
-        colorMap.set(key, idx);
-      } else {
-        idx = 0;
-      }
-    }
-    indexedPixels[i / 4] = idx;
-  }
-
-  while (palette.length < 256) {
-    palette.push([0, 0, 0]);
-  }
-
-  const minCodeSize = 8;
-  const clearCode = 1 << minCodeSize; // 256
-  const eoiCode = clearCode + 1;      // 257
-
-  let curCodeSize = minCodeSize + 1;
-  let nextCode = clearCode + 2;
-  const dict = new Map<string, number>();
-
-  const resetDict = () => {
-    dict.clear();
-    for (let i = 0; i < clearCode; i++) {
-      dict.set(String.fromCharCode(i), i);
-    }
-    curCodeSize = minCodeSize + 1;
-    nextCode = clearCode + 2;
-  };
-
-  resetDict();
-
-  const outputBits: number[] = [];
-  let bitBuffer = 0;
-  let bitCount = 0;
-
-  const writeBits = (code: number, bits: number) => {
-    bitBuffer |= code << bitCount;
-    bitCount += bits;
-    while (bitCount >= 8) {
-      outputBits.push(bitBuffer & 0xff);
-      bitBuffer >>= 8;
-      bitCount -= 8;
-    }
-  };
-
-  writeBits(clearCode, curCodeSize);
-
-  let currentPrefix = String.fromCharCode(indexedPixels[0]);
-  for (let i = 1; i < indexedPixels.length; i++) {
-    const k = String.fromCharCode(indexedPixels[i]);
-    const combined = currentPrefix + k;
-    if (dict.has(combined)) {
-      currentPrefix = combined;
-    } else {
-      writeBits(dict.get(currentPrefix)!, curCodeSize);
-      if (nextCode < 4096) {
-        dict.set(combined, nextCode++);
-        if (nextCode > (1 << curCodeSize) && curCodeSize < 12) {
-          curCodeSize++;
+    for (let i = 0; i < rgbaData.length; i += 4) {
+      const r = rgbaData[i] & 0xf8;
+      const g = rgbaData[i + 1] & 0xf8;
+      const b = rgbaData[i + 2] & 0xf8;
+      const key = (r << 16) | (g << 8) | b;
+      let idx = colorMap.get(key);
+      if (idx === undefined) {
+        if (palette.length < 256) {
+          idx = palette.length;
+          palette.push([r, g, b]);
+          colorMap.set(key, idx);
+        } else {
+          idx = 0;
         }
-      } else {
-        writeBits(clearCode, curCodeSize);
-        resetDict();
       }
-      currentPrefix = k;
+      indexedPixels[i / 4] = idx;
     }
+
+    while (palette.length < 256) {
+      palette.push([0, 0, 0]);
+    }
+
+    const minCodeSize = 8;
+    const clearCode = 1 << minCodeSize; // 256
+    const eoiCode = clearCode + 1; // 257
+
+    let curCodeSize = minCodeSize + 1;
+    let nextCode = clearCode + 2;
+    const dict = new Map<string, number>();
+
+    const resetDict = () => {
+      dict.clear();
+      for (let i = 0; i < clearCode; i++) {
+        dict.set(String.fromCharCode(i), i);
+      }
+      curCodeSize = minCodeSize + 1;
+      nextCode = clearCode + 2;
+    };
+
+    resetDict();
+
+    const outputBits: number[] = [];
+    let bitBuffer = 0;
+    let bitCount = 0;
+
+    const writeBits = (code: number, bits: number) => {
+      bitBuffer |= code << bitCount;
+      bitCount += bits;
+      while (bitCount >= 8) {
+        outputBits.push(bitBuffer & 0xff);
+        bitBuffer >>= 8;
+        bitCount -= 8;
+      }
+    };
+
+    writeBits(clearCode, curCodeSize);
+
+    let currentPrefix = String.fromCharCode(indexedPixels[0]);
+    for (let i = 1; i < indexedPixels.length; i++) {
+      const k = String.fromCharCode(indexedPixels[i]);
+      const combined = currentPrefix + k;
+      if (dict.has(combined)) {
+        currentPrefix = combined;
+      } else {
+        writeBits(dict.get(currentPrefix)!, curCodeSize);
+        if (nextCode < 4096) {
+          dict.set(combined, nextCode++);
+          if (nextCode > 1 << curCodeSize && curCodeSize < 12) {
+            curCodeSize++;
+          }
+        } else {
+          writeBits(clearCode, curCodeSize);
+          resetDict();
+        }
+        currentPrefix = k;
+      }
+    }
+    writeBits(dict.get(currentPrefix)!, curCodeSize);
+    writeBits(eoiCode, curCodeSize);
+    if (bitCount > 0) {
+      outputBits.push(bitBuffer & 0xff);
+    }
+
+    const parts: Uint8Array[] = [];
+
+    // Header "GIF89a"
+    parts.push(new TextEncoder().encode("GIF89a"));
+
+    // LSD (7 bytes)
+    const lsd = new Uint8Array(7);
+    const lsdView = new DataView(lsd.buffer);
+    lsdView.setUint16(0, width, true);
+    lsdView.setUint16(2, height, true);
+    lsd[4] = 0xf7; // 256 colors
+    lsd[5] = 0;
+    lsd[6] = 0;
+    parts.push(lsd);
+
+    // Global Color Table (768 bytes)
+    const gct = new Uint8Array(768);
+    for (let i = 0; i < 256; i++) {
+      gct[i * 3] = palette[i][0];
+      gct[i * 3 + 1] = palette[i][1];
+      gct[i * 3 + 2] = palette[i][2];
+    }
+    parts.push(gct);
+
+    // Graphic Control Extension (8 bytes)
+    parts.push(
+      new Uint8Array([0x21, 0xf9, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00]),
+    );
+
+    // Image Descriptor (10 bytes)
+    const id = new Uint8Array(10);
+    const idView = new DataView(id.buffer);
+    id[0] = 0x2c;
+    idView.setUint16(1, 0, true);
+    idView.setUint16(3, 0, true);
+    idView.setUint16(5, width, true);
+    idView.setUint16(7, height, true);
+    id[9] = 0;
+    parts.push(id);
+
+    // Sub-blocks
+    parts.push(new Uint8Array([minCodeSize]));
+    let pos = 0;
+    while (pos < outputBits.length) {
+      const chunkSize = Math.min(255, outputBits.length - pos);
+      const subBlock = new Uint8Array(chunkSize + 1);
+      subBlock[0] = chunkSize;
+      subBlock.set(outputBits.slice(pos, pos + chunkSize), 1);
+      parts.push(subBlock);
+      pos += chunkSize;
+    }
+    parts.push(new Uint8Array([0x00])); // Block terminator
+
+    // Trailer ';'
+    parts.push(new Uint8Array([0x3b]));
+
+    return new Blob(parts as unknown as BlobPart[], { type: "image/gif" });
   }
-  writeBits(dict.get(currentPrefix)!, curCodeSize);
-  writeBits(eoiCode, curCodeSize);
-  if (bitCount > 0) {
-    outputBits.push(bitBuffer & 0xff);
-  }
-
-  const parts: Uint8Array[] = [];
-
-  // Header "GIF89a"
-  parts.push(new TextEncoder().encode("GIF89a"));
-
-  // LSD (7 bytes)
-  const lsd = new Uint8Array(7);
-  const lsdView = new DataView(lsd.buffer);
-  lsdView.setUint16(0, width, true);
-  lsdView.setUint16(2, height, true);
-  lsd[4] = 0xf7; // 256 colors
-  lsd[5] = 0;
-  lsd[6] = 0;
-  parts.push(lsd);
-
-  // Global Color Table (768 bytes)
-  const gct = new Uint8Array(768);
-  for (let i = 0; i < 256; i++) {
-    gct[i * 3] = palette[i][0];
-    gct[i * 3 + 1] = palette[i][1];
-    gct[i * 3 + 2] = palette[i][2];
-  }
-  parts.push(gct);
-
-  // Graphic Control Extension (8 bytes)
-  parts.push(new Uint8Array([0x21, 0xf9, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00]));
-
-  // Image Descriptor (10 bytes)
-  const id = new Uint8Array(10);
-  const idView = new DataView(id.buffer);
-  id[0] = 0x2c;
-  idView.setUint16(1, 0, true);
-  idView.setUint16(3, 0, true);
-  idView.setUint16(5, width, true);
-  idView.setUint16(7, height, true);
-  id[9] = 0;
-  parts.push(id);
-
-  // Sub-blocks
-  parts.push(new Uint8Array([minCodeSize]));
-  let pos = 0;
-  while (pos < outputBits.length) {
-    const chunkSize = Math.min(255, outputBits.length - pos);
-    const subBlock = new Uint8Array(chunkSize + 1);
-    subBlock[0] = chunkSize;
-    subBlock.set(outputBits.slice(pos, pos + chunkSize), 1);
-    parts.push(subBlock);
-    pos += chunkSize;
-  }
-  parts.push(new Uint8Array([0x00])); // Block terminator
-
-  // Trailer ';'
-  parts.push(new Uint8Array([0x3b]));
-
-  return new Blob(parts as unknown as BlobPart[], { type: "image/gif" });
-}
 
   const convertSingleFileClient = async (
     file: File,
     targetFormat: string,
     targetWidth?: number,
     targetHeight?: number,
-    targetQuality: number = 80
+    targetQuality: number = 80,
   ): Promise<ConvertedFile> => {
     return new Promise((resolve, reject) => {
       const img = new window.Image();
@@ -434,7 +441,8 @@ function createGifBlob(canvas: HTMLCanvasElement): Blob {
         ctx.imageSmoothingQuality = "high";
 
         const fmt = targetFormat.toLowerCase();
-        const originalName = file.name.split(".").slice(0, -1).join(".") || "image";
+        const originalName =
+          file.name.split(".").slice(0, -1).join(".") || "image";
 
         // 1. Direct client-side SVG generation
         if (fmt === "svg") {
@@ -530,7 +538,12 @@ function createGifBlob(canvas: HTMLCanvasElement): Blob {
 
         canvas.toBlob(
           (blob) => {
-            if (blob && (fmt !== "avif" && fmt !== "heic" && fmt !== "heif" || blob.type === "image/avif" || blob.type === "image/webp")) {
+            if (
+              blob &&
+              ((fmt !== "avif" && fmt !== "heic" && fmt !== "heif") ||
+                blob.type === "image/avif" ||
+                blob.type === "image/webp")
+            ) {
               const reader = new FileReader();
               reader.onload = (e) => {
                 const dataUrl = e.target?.result as string;
@@ -566,12 +579,12 @@ function createGifBlob(canvas: HTMLCanvasElement): Blob {
                   reader.readAsDataURL(fallbackBlob);
                 },
                 "image/webp",
-                targetQuality / 100
+                targetQuality / 100,
               );
             }
           },
           mimeType,
-          targetQuality / 100
+          targetQuality / 100,
         );
       };
 
@@ -620,8 +633,8 @@ function createGifBlob(canvas: HTMLCanvasElement): Blob {
       // 1. Client-Side High-Speed Direct Conversion for all formats (PNG, JPG, WebP, SVG, TIFF, GIF, HEIC, AVIF)
       const converted = await Promise.all(
         files.map((file) =>
-          convertSingleFileClient(file, fmt, targetW, targetH, targetQual)
-        )
+          convertSingleFileClient(file, fmt, targetW, targetH, targetQual),
+        ),
       );
       setResults(converted);
       setConvertProgress(100);
@@ -661,7 +674,8 @@ function createGifBlob(canvas: HTMLCanvasElement): Blob {
           const data = await res.json();
           if (data.files && data.files.length > 0) {
             const convertedFile = data.files[0];
-            const base64Data = convertedFile.data.split(",")[1] || convertedFile.data;
+            const base64Data =
+              convertedFile.data.split(",")[1] || convertedFile.data;
             const sizeInBytes = Math.round((base64Data.length * 3) / 4);
 
             convertedResults.push({
@@ -849,7 +863,10 @@ function createGifBlob(canvas: HTMLCanvasElement): Blob {
                         placeholder="Auto"
                         value={width}
                         onChange={(e) => {
-                          const cleaned = e.target.value.replace(/^0+(?=\d)/, "");
+                          const cleaned = e.target.value.replace(
+                            /^0+(?=\d)/,
+                            "",
+                          );
                           e.target.value = cleaned;
                           setWidth(cleaned);
                         }}
@@ -871,7 +888,10 @@ function createGifBlob(canvas: HTMLCanvasElement): Blob {
                         placeholder="Auto"
                         value={height}
                         onChange={(e) => {
-                          const cleaned = e.target.value.replace(/^0+(?=\d)/, "");
+                          const cleaned = e.target.value.replace(
+                            /^0+(?=\d)/,
+                            "",
+                          );
                           e.target.value = cleaned;
                           setHeight(cleaned);
                         }}
@@ -1006,11 +1026,7 @@ function createGifBlob(canvas: HTMLCanvasElement): Blob {
               ) : (
                 <>
                   <ArrowDownTrayIcon aria-hidden="true" className="w-5 h-5" />
-                  <span>
-                    {files.length > 0
-                      ? "Convert"
-                      : "Select Images"}
-                  </span>
+                  <span>{files.length > 0 ? "Convert" : "Select Images"}</span>
                 </>
               )}
             </button>
