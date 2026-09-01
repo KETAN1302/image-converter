@@ -21,7 +21,12 @@ export default function CropImage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const [cropCoords, setCropCoords] = useState({
+  const [cropCoords, setCropCoords] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }>({
     x: 0,
     y: 0,
     width: 100,
@@ -95,9 +100,18 @@ export default function CropImage() {
     reader.readAsDataURL(uploadedFile);
   };
 
-  const handleCropChange = (key: string, value: number) => {
-    const updated = { ...cropCoords, [key]: Math.max(0, value) };
-    setCropCoords(updated);
+  const handleCropChange = (key: keyof typeof cropCoords, value: string, targetInput?: HTMLInputElement) => {
+    if (value === "" || value === undefined) {
+      setCropCoords((prev) => ({ ...prev, [key]: 0 }));
+      return;
+    }
+    const cleaned = value.replace(/^0+(?=\d)/, "");
+    if (targetInput && targetInput.value !== cleaned) {
+      targetInput.value = cleaned;
+    }
+    const num = parseInt(cleaned, 10);
+    const validValue = isNaN(num) ? 0 : Math.max(0, num);
+    setCropCoords((prev) => ({ ...prev, [key]: validValue }));
   };
 
   const getMousePos = (e: { clientX: number; clientY: number }) => {
@@ -334,6 +348,107 @@ export default function CropImage() {
     handleImageMouseUp();
   };
 
+  const cropImageClientSide = async (
+    sourceFile: File,
+    x: number,
+    y: number,
+    w: number,
+    h: number
+  ): Promise<{ dataUrl: string; blob: Blob }> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      const objectUrl = URL.createObjectURL(sourceFile);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+
+        const imgW = img.naturalWidth || img.width;
+        const imgH = img.naturalHeight || img.height;
+
+        if (!imgW || !imgH) {
+          reject(new Error("Invalid image dimensions"));
+          return;
+        }
+
+        // Clamp coordinates strictly within source image dimensions to prevent IndexSizeError
+        const safeX = Math.max(0, Math.min(imgW - 1, Math.round(x)));
+        const safeY = Math.max(0, Math.min(imgH - 1, Math.round(y)));
+        const safeW = Math.max(1, Math.min(imgW - safeX, Math.round(w)));
+        const safeH = Math.max(1, Math.min(imgH - safeY, Math.round(h)));
+
+        const canvas = document.createElement("canvas");
+        canvas.width = safeW;
+        canvas.height = safeH;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) {
+          reject(new Error("Could not initialize canvas context"));
+          return;
+        }
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+
+        const fileType = sourceFile.type.toLowerCase();
+        let mimeType = "image/jpeg";
+        if (fileType.includes("png")) {
+          mimeType = "image/png";
+        } else if (fileType.includes("webp")) {
+          mimeType = "image/webp";
+        }
+
+        if (mimeType === "image/jpeg") {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, safeW, safeH);
+        }
+
+        ctx.drawImage(img, safeX, safeY, safeW, safeH, 0, 0, safeW, safeH);
+
+        try {
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  const dataUrl = e.target?.result as string;
+                  resolve({ dataUrl, blob });
+                };
+                reader.onerror = () => reject(new Error("Failed to read cropped blob"));
+                reader.readAsDataURL(blob);
+              } else {
+                const dataUrl = canvas.toDataURL(mimeType, 0.92);
+                const bin = atob(dataUrl.split(",")[1]);
+                const arr = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) {
+                  arr[i] = bin.charCodeAt(i);
+                }
+                const fallbackBlob = new Blob([arr], { type: mimeType });
+                resolve({ dataUrl, blob: fallbackBlob });
+              }
+            },
+            mimeType,
+            0.92
+          );
+        } catch {
+          const dataUrl = canvas.toDataURL(mimeType, 0.92);
+          const bin = atob(dataUrl.split(",")[1]);
+          const arr = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) {
+            arr[i] = bin.charCodeAt(i);
+          }
+          const fallbackBlob = new Blob([arr], { type: mimeType });
+          resolve({ dataUrl, blob: fallbackBlob });
+        }
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Failed to load source image into canvas"));
+      };
+
+      img.src = objectUrl;
+    });
+  };
+
   const cropImage = async () => {
     if (!file) {
       setError("Please upload an image first");
@@ -341,42 +456,74 @@ export default function CropImage() {
     }
 
     setLoading(true);
+    setError(null);
+
+    const targetX = Math.round(Number(cropCoords.x) || 0);
+    const targetY = Math.round(Number(cropCoords.y) || 0);
+    const targetW = Math.round(Number(cropCoords.width) || 100);
+    const targetH = Math.round(Number(cropCoords.height) || 100);
+
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("x", String(cropCoords.x));
-      formData.append("y", String(cropCoords.y));
-      formData.append("width", String(cropCoords.width));
-      formData.append("height", String(cropCoords.height));
-      formData.append("quality", "90");
+      // 1. Client-side canvas crop (instant, handles files of any size without Vercel limits)
+      const clientResult = await cropImageClientSide(
+        file,
+        targetX,
+        targetY,
+        targetW,
+        targetH
+      );
 
-      const response = await fetch("/api/crop", {
-        method: "POST",
-        body: formData,
+      setResult({
+        name: `cropped-${file.name}`,
+        data: clientResult.dataUrl,
+        preview,
       });
+    } catch (clientErr) {
+      console.warn("Client-side crop failed, falling back to server API:", clientErr);
+      // 2. Server API fallback
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("x", String(targetX));
+        formData.append("y", String(targetY));
+        formData.append("width", String(targetW));
+        formData.append("height", String(targetH));
+        formData.append("quality", "90");
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to crop image");
-      }
-
-      const blob = await response.blob();
-
-      // Create preview data URL for result
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const data = event.target?.result as string;
-        setResult({
-          name: `cropped-${file.name}`,
-          data,
-          preview,
+        const response = await fetch("/api/crop", {
+          method: "POST",
+          body: formData,
         });
-      };
-      reader.readAsDataURL(blob);
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : "Error cropping image";
-      setError(msg);
-      console.error(error);
+
+        if (!response.ok) {
+          const rawText = await response.text().catch(() => "");
+          let errorMsg = "Failed to crop image";
+          try {
+            const parsed = JSON.parse(rawText);
+            if (parsed?.error) errorMsg = parsed.error;
+          } catch {
+            if (response.status === 413) {
+              errorMsg = "File size exceeds server upload limit.";
+            }
+          }
+          throw new Error(errorMsg);
+        }
+
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const data = event.target?.result as string;
+          setResult({
+            name: `cropped-${file.name}`,
+            data,
+            preview,
+          });
+        };
+        reader.readAsDataURL(blob);
+      } catch (apiErr) {
+        const msg = apiErr instanceof Error ? apiErr.message : "Error cropping image";
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -816,7 +963,7 @@ export default function CropImage() {
               <label className="block text-sm font-bold text-gray-950 dark:text-white mb-3">
                 Crop Coordinates
               </label>
-              <div className="grid grid-cols-2 gap-2 md:gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
                 <div>
                   <label htmlFor="crop-x" className="block text-xs font-semibold text-gray-950 dark:text-white mb-1">
                     X
@@ -825,11 +972,12 @@ export default function CropImage() {
                     id="crop-x"
                     type="number"
                     aria-label="Crop X coordinate in pixels"
-                    value={cropCoords.x}
+                    placeholder="0"
+                    value={cropCoords.x === 0 ? "" : cropCoords.x}
                     onChange={(e) =>
-                      handleCropChange("x", parseInt(e.target.value))
+                      handleCropChange("x", e.target.value, e.target)
                     }
-                    className="w-full px-2 py-2 text-xs md:text-sm font-medium border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-950 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 py-2 text-xs md:text-sm font-medium border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-950 dark:text-white outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:m-0"
                   />
                 </div>
                 <div>
@@ -840,11 +988,12 @@ export default function CropImage() {
                     id="crop-y"
                     type="number"
                     aria-label="Crop Y coordinate in pixels"
-                    value={cropCoords.y}
+                    placeholder="0"
+                    value={cropCoords.y === 0 ? "" : cropCoords.y}
                     onChange={(e) =>
-                      handleCropChange("y", parseInt(e.target.value))
+                      handleCropChange("y", e.target.value, e.target)
                     }
-                    className="w-full px-2 py-2 text-xs md:text-sm font-medium border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-950 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 py-2 text-xs md:text-sm font-medium border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-950 dark:text-white outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:m-0"
                   />
                 </div>
                 <div>
@@ -855,11 +1004,12 @@ export default function CropImage() {
                     id="crop-w"
                     type="number"
                     aria-label="Crop width in pixels"
-                    value={cropCoords.width}
+                    placeholder="0"
+                    value={cropCoords.width === 0 ? "" : cropCoords.width}
                     onChange={(e) =>
-                      handleCropChange("width", parseInt(e.target.value))
+                      handleCropChange("width", e.target.value, e.target)
                     }
-                    className="w-full px-2 py-2 text-xs md:text-sm font-medium border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-950 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 py-2 text-xs md:text-sm font-medium border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-950 dark:text-white outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:m-0"
                   />
                 </div>
                 <div>
@@ -870,11 +1020,12 @@ export default function CropImage() {
                     id="crop-h"
                     type="number"
                     aria-label="Crop height in pixels"
-                    value={cropCoords.height}
+                    placeholder="0"
+                    value={cropCoords.height === 0 ? "" : cropCoords.height}
                     onChange={(e) =>
-                      handleCropChange("height", parseInt(e.target.value))
+                      handleCropChange("height", e.target.value, e.target)
                     }
-                    className="w-full px-2 py-2 text-xs md:text-sm font-medium border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-950 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 py-2 text-xs md:text-sm font-medium border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-950 dark:text-white outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:m-0"
                   />
                 </div>
               </div>

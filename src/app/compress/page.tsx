@@ -60,6 +60,100 @@ export default function CompressImage() {
     reader.readAsDataURL(uploadedFile);
   };
 
+  const compressImageClientSide = async (
+    sourceFile: File,
+    targetQuality: number
+  ): Promise<{ dataUrl: string; blob: Blob }> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      const objectUrl = URL.createObjectURL(sourceFile);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+
+        const w = img.naturalWidth || img.width;
+        const h = img.naturalHeight || img.height;
+
+        if (!w || !h) {
+          reject(new Error("Invalid image dimensions"));
+          return;
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) {
+          reject(new Error("Could not initialize canvas context"));
+          return;
+        }
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+
+        const fileType = sourceFile.type.toLowerCase();
+        let mimeType = "image/jpeg";
+        if (fileType.includes("webp")) {
+          mimeType = "image/webp";
+        } else if (fileType.includes("png")) {
+          mimeType = "image/webp";
+        }
+
+        if (mimeType === "image/jpeg") {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, w, h);
+        }
+
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const q = Math.max(0.05, Math.min(1.0, targetQuality / 100));
+
+        try {
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  const dataUrl = e.target?.result as string;
+                  resolve({ dataUrl, blob });
+                };
+                reader.onerror = () => reject(new Error("Failed to read compressed blob"));
+                reader.readAsDataURL(blob);
+              } else {
+                const dataUrl = canvas.toDataURL(mimeType, q);
+                const bin = atob(dataUrl.split(",")[1]);
+                const arr = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) {
+                  arr[i] = bin.charCodeAt(i);
+                }
+                const fallbackBlob = new Blob([arr], { type: mimeType });
+                resolve({ dataUrl, blob: fallbackBlob });
+              }
+            },
+            mimeType,
+            q
+          );
+        } catch {
+          const dataUrl = canvas.toDataURL(mimeType, q);
+          const bin = atob(dataUrl.split(",")[1]);
+          const arr = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) {
+            arr[i] = bin.charCodeAt(i);
+          }
+          const fallbackBlob = new Blob([arr], { type: mimeType });
+          resolve({ dataUrl, blob: fallbackBlob });
+        }
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Failed to load source image into canvas"));
+      };
+
+      img.src = objectUrl;
+    });
+  };
+
   const compressImage = async () => {
     if (!file) {
       setError("Please upload an image first");
@@ -67,42 +161,65 @@ export default function CompressImage() {
     }
 
     setLoading(true);
+    setError(null);
+
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("quality", String(quality));
-
-      const response = await fetch("/api/compress", {
-        method: "POST",
-        body: formData,
+      // 1. Client-side canvas compression (instant, unlimited file size, no Vercel payload limits)
+      const clientResult = await compressImageClientSide(file, quality);
+      setCompressedSize(clientResult.blob.size);
+      setResult({
+        name: `compressed-${file.name}`,
+        data: clientResult.dataUrl,
+        originalSize,
+        compressedSize: clientResult.blob.size,
+        preview,
       });
+    } catch (clientErr) {
+      console.warn("Client compression failed, falling back to server API:", clientErr);
+      // 2. Server API fallback
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("quality", String(quality));
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to compress image");
-      }
-
-      const blob = await response.blob();
-      setCompressedSize(blob.size);
-
-      // Create preview data URL for result
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const data = event.target?.result as string;
-        setResult({
-          name: `compressed-${file.name}`,
-          data,
-          originalSize,
-          compressedSize: blob.size,
-          preview,
+        const response = await fetch("/api/compress", {
+          method: "POST",
+          body: formData,
         });
-      };
-      reader.readAsDataURL(blob);
-    } catch (error) {
-      const msg =
-        error instanceof Error ? error.message : "Error compressing image";
-      setError(msg);
-      console.error(error);
+
+        if (!response.ok) {
+          const rawText = await response.text().catch(() => "");
+          let errorMsg = "Failed to compress image";
+          try {
+            const parsed = JSON.parse(rawText);
+            if (parsed?.error) errorMsg = parsed.error;
+          } catch {
+            if (response.status === 413) {
+              errorMsg = "File size exceeds server upload limit.";
+            }
+          }
+          throw new Error(errorMsg);
+        }
+
+        const blob = await response.blob();
+        setCompressedSize(blob.size);
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const data = event.target?.result as string;
+          setResult({
+            name: `compressed-${file.name}`,
+            data,
+            originalSize,
+            compressedSize: blob.size,
+            preview,
+          });
+        };
+        reader.readAsDataURL(blob);
+      } catch (apiErr) {
+        const msg = apiErr instanceof Error ? apiErr.message : "Error compressing image";
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }

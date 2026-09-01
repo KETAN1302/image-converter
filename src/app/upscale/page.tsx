@@ -31,8 +31,8 @@ export default function UpscalePage() {
   // Settings
   const [scaleFactor, setScaleFactor] = useState<number>(2);
   const [isCustomScale, setIsCustomScale] = useState<boolean>(false);
-  const [customWidth, setCustomWidth] = useState<number>(0);
-  const [customHeight, setCustomHeight] = useState<number>(0);
+  const [customWidth, setCustomWidth] = useState<number | string>(0);
+  const [customHeight, setCustomHeight] = useState<number | string>(0);
   const [keepAspectRatio, setKeepAspectRatio] = useState<boolean>(true);
   const [sharpenAmount, setSharpenAmount] = useState<number>(40);
 
@@ -47,6 +47,7 @@ export default function UpscalePage() {
   const [error, setError] = useState<string | null>(null);
 
   const comparisonContainerRef = useRef<HTMLDivElement>(null);
+
 
   // Clean up object URLs
   useEffect(() => {
@@ -102,19 +103,45 @@ export default function UpscalePage() {
     img.src = objUrl;
   };
 
-  const handleWidthChange = (val: number) => {
-    setCustomWidth(val);
-    if (keepAspectRatio && originalStats && originalStats.width > 0) {
+  const handleWidthChange = (val: string | number, targetInput?: HTMLInputElement) => {
+    if (val === "" || val === undefined) {
+      setCustomWidth("");
+      return;
+    }
+    const cleaned = typeof val === "string" ? val.replace(/^0+(?=\d)/, "") : String(val);
+    if (targetInput && targetInput.value !== cleaned) {
+      targetInput.value = cleaned;
+    }
+    const num = parseInt(cleaned, 10);
+    if (isNaN(num)) {
+      setCustomWidth("");
+      return;
+    }
+    setCustomWidth(num);
+    if (keepAspectRatio && originalStats && originalStats.width > 0 && num > 0) {
       const ratio = originalStats.height / originalStats.width;
-      setCustomHeight(Math.round(val * ratio));
+      setCustomHeight(Math.round(num * ratio));
     }
   };
 
-  const handleHeightChange = (val: number) => {
-    setCustomHeight(val);
-    if (keepAspectRatio && originalStats && originalStats.height > 0) {
+  const handleHeightChange = (val: string | number, targetInput?: HTMLInputElement) => {
+    if (val === "" || val === undefined) {
+      setCustomHeight("");
+      return;
+    }
+    const cleaned = typeof val === "string" ? val.replace(/^0+(?=\d)/, "") : String(val);
+    if (targetInput && targetInput.value !== cleaned) {
+      targetInput.value = cleaned;
+    }
+    const num = parseInt(cleaned, 10);
+    if (isNaN(num)) {
+      setCustomHeight("");
+      return;
+    }
+    setCustomHeight(num);
+    if (keepAspectRatio && originalStats && originalStats.height > 0 && num > 0) {
       const ratio = originalStats.width / originalStats.height;
-      setCustomWidth(Math.round(val * ratio));
+      setCustomWidth(Math.round(num * ratio));
     }
   };
 
@@ -146,11 +173,11 @@ export default function UpscalePage() {
       if (isCustomScale) {
         targetW = Math.max(
           1,
-          Math.min(16384, customWidth || originalStats.width),
+          Math.min(16384, Number(customWidth) || originalStats.width),
         );
         targetH = Math.max(
           1,
-          Math.min(16384, customHeight || originalStats.height),
+          Math.min(16384, Number(customHeight) || originalStats.height),
         );
       }
 
@@ -447,9 +474,9 @@ export default function UpscalePage() {
               </label>
               <div className="flex gap-2 flex-wrap">
                 {[
-                  { label: "2x (Recommended)", value: 2 },
-                  { label: "4x (High Def)", value: 4 },
-                  { label: "8x (Ultra HD)", value: 8 },
+                  { label: "2x", value: 2 },
+                  { label: "4x", value: 4 },
+                  { label: "8x", value: 8 },
                 ].map((preset) => (
                   <button
                     key={preset.value}
@@ -502,9 +529,9 @@ export default function UpscalePage() {
                       max="16384"
                       value={customWidth}
                       onChange={(e) =>
-                        handleWidthChange(parseInt(e.target.value) || 0)
+                        handleWidthChange(e.target.value, e.target)
                       }
-                      className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white rounded p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white rounded p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:m-0"
                     />
                   </div>
                   <div>
@@ -517,9 +544,9 @@ export default function UpscalePage() {
                       max="16384"
                       value={customHeight}
                       onChange={(e) =>
-                        handleHeightChange(parseInt(e.target.value) || 0)
+                        handleHeightChange(e.target.value, e.target)
                       }
-                      className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white rounded p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white rounded p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:m-0"
                     />
                   </div>
                 </div>
@@ -594,13 +621,13 @@ export default function UpscalePage() {
               {isProcessing ? (
                 <>
                   <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Upscaling Image... {progressPercent}%</span>
+                  <span>Upscaling... {progressPercent}%</span>
                 </>
               ) : (
                 <>
                   <SparklesIcon aria-hidden="true" className="w-5 h-5" />
                   <span>
-                    Upscale Image{" "}
+                    Upscale {" "}
                     {isCustomScale
                       ? `${customWidth}×${customHeight}`
                       : `${scaleFactor}x`}

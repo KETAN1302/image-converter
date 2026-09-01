@@ -21,11 +21,6 @@ interface ConvertedFile {
   preview?: string;
 }
 
-interface ApiFile {
-  name: string;
-  data: string;
-  preview?: string;
-}
 
 const isImageFile = (file: File) => {
   return (
@@ -158,6 +153,104 @@ export default function Home() {
     return true;
   };
 
+  const convertSingleFileClient = async (
+    file: File,
+    targetFormat: string,
+    targetWidth?: number,
+    targetHeight?: number,
+    targetQuality: number = 80
+  ): Promise<ConvertedFile> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+
+        let finalW = img.naturalWidth || img.width;
+        let finalH = img.naturalHeight || img.height;
+
+        if (targetWidth && targetHeight) {
+          finalW = targetWidth;
+          finalH = targetHeight;
+        } else if (targetWidth) {
+          finalH = Math.round((finalH * targetWidth) / finalW);
+          finalW = targetWidth;
+        } else if (targetHeight) {
+          finalW = Math.round((finalW * targetHeight) / finalH);
+          finalH = targetHeight;
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, finalW);
+        canvas.height = Math.max(1, finalH);
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) {
+          reject(new Error("Could not initialize canvas context"));
+          return;
+        }
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+
+        const fmt = targetFormat.toLowerCase();
+        let mimeType = "image/jpeg";
+        let extension = "jpg";
+
+        if (fmt === "png") {
+          mimeType = "image/png";
+          extension = "png";
+        } else if (fmt === "webp") {
+          mimeType = "image/webp";
+          extension = "webp";
+        } else if (fmt === "jpeg" || fmt === "jpg") {
+          mimeType = "image/jpeg";
+          extension = fmt;
+        }
+
+        // Fill background white for JPEG if original is transparent
+        if (mimeType === "image/jpeg") {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, finalW, finalH);
+        }
+
+        ctx.drawImage(img, 0, 0, finalW, finalH);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error("Failed to create converted image blob"));
+              return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const dataUrl = e.target?.result as string;
+              const originalName = file.name.split(".").slice(0, -1).join(".") || "image";
+              resolve({
+                name: `${originalName}.${extension}`,
+                data: dataUrl,
+                preview: dataUrl,
+                size: blob.size,
+                width: finalW,
+                height: finalH,
+              });
+            };
+            reader.readAsDataURL(blob);
+          },
+          mimeType,
+          targetQuality / 100
+        );
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error(`Failed to load ${file.name}`));
+      };
+
+      img.src = objectUrl;
+    });
+  };
+
   const handleConvert = async () => {
     if (files.length === 0) {
       setError("Please select at least one image");
@@ -172,97 +265,108 @@ export default function Home() {
     setError(null);
     setResults([]);
 
-    const formData = new FormData();
+    const targetW = width ? parseInt(width, 10) : undefined;
+    const targetH = height ? parseInt(height, 10) : undefined;
+    const targetQual = parseInt(quality, 10) || 80;
+    const fmt = format.toLowerCase();
 
-    files.forEach((file) => formData.append("files", file));
-    formData.append("format", format);
-    formData.append("width", width);
-    formData.append("height", height);
-    formData.append("quality", quality);
+    // Start simulated conversion progress
+    setConvertProgress(10);
+    const tickMs = 150;
+    if (convertIntervalRef.current) {
+      clearInterval(convertIntervalRef.current);
+    }
+    convertIntervalRef.current = window.setInterval(() => {
+      setConvertProgress((p) => {
+        const next = Math.min(95, p + 10);
+        return next;
+      });
+    }, tickMs);
+
+    const isClientSupportedFormat = ["png", "jpg", "jpeg", "webp"].includes(fmt);
 
     try {
-      // start simulated conversion progress
-      setConvertProgress(0);
-      const tickMs = 200;
-      // Estimate duration: base + per-file, give TIFF more time
-      const base = 2000;
-      const perFile = format === "tiff" ? 1500 : 700;
-      const estimated = Math.max(2000, base + files.length * perFile);
-      const steps = Math.max(1, Math.floor(estimated / tickMs));
-      const increment = 100 / steps;
+      if (isClientSupportedFormat) {
+        // 1. Client-Side High-Speed Conversion (0ms network delay, no 4.5MB Vercel limit)
+        const converted = await Promise.all(
+          files.map((file) =>
+            convertSingleFileClient(file, fmt, targetW, targetH, targetQual)
+          )
+        );
+        setResults(converted);
+        setConvertProgress(100);
+      } else {
+        // 2. Server API Conversion for special formats (AVIF, TIFF, GIF, ICO, BMP)
+        const convertedResults: ConvertedFile[] = [];
 
-      if (convertIntervalRef.current) {
-        clearInterval(convertIntervalRef.current);
-      }
-      convertIntervalRef.current = window.setInterval(() => {
-        setConvertProgress((p) => {
-          const next = Math.min(99, p + increment);
-          return next;
-        });
-      }, tickMs);
+        // Process files individually to stay well under Vercel's 4.5MB payload limit
+        for (const file of files) {
+          const singleFormData = new FormData();
+          singleFormData.append("files", file);
+          singleFormData.append("format", format);
+          if (width) singleFormData.append("width", width);
+          if (height) singleFormData.append("height", height);
+          singleFormData.append("quality", quality);
 
-      const res = await fetch("/api/convert", {
-        method: "POST",
-        body: formData,
-      });
+          const res = await fetch("/api/convert", {
+            method: "POST",
+            body: singleFormData,
+          });
 
-      const data = await res.json();
+          if (!res.ok) {
+            const rawText = await res.text().catch(() => "");
+            let errorMsg = "Conversion failed";
+            try {
+              const parsed = JSON.parse(rawText);
+              if (parsed?.error) errorMsg = parsed.error;
+            } catch {
+              if (res.status === 413) {
+                errorMsg = `File ${file.name} exceeds server upload limit.`;
+              }
+            }
+            throw new Error(errorMsg);
+          }
 
-      if (!res.ok) {
-        throw new Error(data.error || "Conversion failed");
-      }
-
-      if (data.files && data.files.length > 0) {
-        // Add file sizes to results
-        const resultsWithSizes = await Promise.all(
-          data.files.map(async (file: ApiFile) => {
-            // Calculate base64 string size
-            const base64Data = file.data.split(",")[1] || file.data;
+          const data = await res.json();
+          if (data.files && data.files.length > 0) {
+            const convertedFile = data.files[0];
+            const base64Data = convertedFile.data.split(",")[1] || convertedFile.data;
             const sizeInBytes = Math.round((base64Data.length * 3) / 4);
 
-            // Get image dimensions safely
-            let width: number | undefined = undefined;
-            let height: number | undefined = undefined;
-
-            try {
-              const img = new Image();
-              await new Promise<void>((resolve) => {
-                const timer = setTimeout(() => resolve(), 600);
-                img.onload = () => {
-                  clearTimeout(timer);
-                  width = img.width;
-                  height = img.height;
-                  resolve();
-                };
-                img.onerror = () => {
-                  clearTimeout(timer);
-                  resolve();
-                };
-                img.src = file.preview || file.data;
-              });
-            } catch {
-              // Ignore dimension decode errors
-            }
-
-            return {
-              ...file,
+            convertedResults.push({
+              ...convertedFile,
               size: sizeInBytes,
-              width,
-              height,
-            };
-          }),
-        );
-        setResults(resultsWithSizes);
-      } else {
-        setError("No files were converted");
+            });
+          }
+        }
+
+        if (convertedResults.length === 0) {
+          throw new Error("No files were converted");
+        }
+
+        setResults(convertedResults);
+        setConvertProgress(100);
       }
     } catch (error: unknown) {
       console.error("Conversion failed:", error);
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Conversion failed. Please try again.";
-      setError(message);
+      // If server failed for any reason, attempt client-side fallback
+      try {
+        console.warn("Attempting client-side fallback conversion...");
+        const fallbackFormat = ["png", "jpg", "jpeg", "webp"].includes(fmt) ? fmt : "png";
+        const fallbackResults = await Promise.all(
+          files.map((file) =>
+            convertSingleFileClient(file, fallbackFormat, targetW, targetH, targetQual)
+          )
+        );
+        setResults(fallbackResults);
+        setConvertProgress(100);
+      } catch {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Conversion failed. Please try again.";
+        setError(message);
+      }
     } finally {
       // finalize progress
       if (convertIntervalRef.current) {
@@ -361,7 +465,7 @@ export default function Home() {
                       aria-label="Output Format"
                       value={format}
                       onChange={(e) => setFormat(e.target.value)}
-                      className="w-full border border-gray-300 dark:border-gray-700 rounded p-2.5 md:p-3 text-sm md:text-base font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white dark:bg-gray-800 text-gray-950 dark:text-white"
+                      className="w-full border border-gray-300 dark:border-gray-700 rounded p-2.5 md:p-3 text-sm md:text-base font-medium outline-none transition-all bg-white dark:bg-gray-800 text-gray-950 dark:text-white"
                     >
                       <option value="png">PNG - Lossless</option>
                       <option value="jpg">JPG - Best for photos</option>
@@ -427,8 +531,12 @@ export default function Home() {
                         aria-label="Target width in pixels"
                         placeholder="Auto"
                         value={width}
-                        onChange={(e) => setWidth(e.target.value)}
-                        className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white rounded p-2.5 md:p-3 text-sm md:text-base font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        onChange={(e) => {
+                          const cleaned = e.target.value.replace(/^0+(?=\d)/, "");
+                          e.target.value = cleaned;
+                          setWidth(cleaned);
+                        }}
+                        className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white rounded p-2.5 md:p-3 text-sm md:text-base font-medium outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:m-0"
                       />
                     </div>
                     <div>
@@ -445,8 +553,12 @@ export default function Home() {
                         aria-label="Target height in pixels"
                         placeholder="Auto"
                         value={height}
-                        onChange={(e) => setHeight(e.target.value)}
-                        className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white rounded p-2.5 md:p-3 text-sm md:text-base font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        onChange={(e) => {
+                          const cleaned = e.target.value.replace(/^0+(?=\d)/, "");
+                          e.target.value = cleaned;
+                          setHeight(cleaned);
+                        }}
+                        className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white rounded p-2.5 md:p-3 text-sm md:text-base font-medium outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:m-0"
                       />
                     </div>
                   </div>

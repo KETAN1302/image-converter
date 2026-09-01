@@ -56,6 +56,109 @@ export default function RotateImage() {
     reader.readAsDataURL(uploadedFile);
   };
 
+  const rotateImageClientSide = async (
+    sourceFile: File,
+    degrees: number,
+    targetQuality: number
+  ): Promise<{ dataUrl: string; blob: Blob }> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      const objectUrl = URL.createObjectURL(sourceFile);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+
+        const w = img.naturalWidth || img.width;
+        const h = img.naturalHeight || img.height;
+
+        if (!w || !h) {
+          reject(new Error("Invalid image dimensions"));
+          return;
+        }
+
+        const rad = (degrees * Math.PI) / 180;
+        const sin = Math.abs(Math.sin(rad));
+        const cos = Math.abs(Math.cos(rad));
+        const newWidth = Math.max(1, Math.round(w * cos + h * sin));
+        const newHeight = Math.max(1, Math.round(w * sin + h * cos));
+
+        const canvas = document.createElement("canvas");
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) {
+          reject(new Error("Could not initialize canvas context"));
+          return;
+        }
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+
+        const fileType = sourceFile.type.toLowerCase();
+        let mimeType = "image/jpeg";
+        if (fileType.includes("png")) {
+          mimeType = "image/png";
+        } else if (fileType.includes("webp")) {
+          mimeType = "image/webp";
+        }
+
+        if (mimeType === "image/jpeg") {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, newWidth, newHeight);
+        }
+
+        ctx.translate(newWidth / 2, newHeight / 2);
+        ctx.rotate(rad);
+        ctx.drawImage(img, -w / 2, -h / 2);
+
+        const q = Math.max(0.1, Math.min(1.0, targetQuality / 100));
+
+        try {
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  const dataUrl = e.target?.result as string;
+                  resolve({ dataUrl, blob });
+                };
+                reader.onerror = () => reject(new Error("Failed to read rotated blob"));
+                reader.readAsDataURL(blob);
+              } else {
+                const dataUrl = canvas.toDataURL(mimeType, q);
+                const bin = atob(dataUrl.split(",")[1]);
+                const arr = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) {
+                  arr[i] = bin.charCodeAt(i);
+                }
+                const fallbackBlob = new Blob([arr], { type: mimeType });
+                resolve({ dataUrl, blob: fallbackBlob });
+              }
+            },
+            mimeType,
+            q
+          );
+        } catch {
+          const dataUrl = canvas.toDataURL(mimeType, q);
+          const bin = atob(dataUrl.split(",")[1]);
+          const arr = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) {
+            arr[i] = bin.charCodeAt(i);
+          }
+          const fallbackBlob = new Blob([arr], { type: mimeType });
+          resolve({ dataUrl, blob: fallbackBlob });
+        }
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Failed to load source image into canvas"));
+      };
+
+      img.src = objectUrl;
+    });
+  };
+
   const rotateImage = async () => {
     if (!file) {
       setError("Please upload an image first");
@@ -63,39 +166,59 @@ export default function RotateImage() {
     }
 
     setLoading(true);
+    setError(null);
+
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("angle", String(rotation));
-      formData.append("quality", String(quality));
-
-      const response = await fetch("/api/rotate", {
-        method: "POST",
-        body: formData,
+      // 1. Client-side canvas rotation (instant, handles files of any size without Vercel limits)
+      const clientResult = await rotateImageClientSide(file, rotation, quality);
+      setResult({
+        name: `rotated-${file.name}`,
+        data: clientResult.dataUrl,
+        preview,
       });
+    } catch (clientErr) {
+      console.warn("Client rotation failed, falling back to server API:", clientErr);
+      // 2. Server API fallback
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("angle", String(rotation));
+        formData.append("quality", String(quality));
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to rotate image");
-      }
-
-      const blob = await response.blob();
-
-      // Create preview data URL for result
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const data = event.target?.result as string;
-        setResult({
-          name: `rotated-${file.name}`,
-          data,
-          preview,
+        const response = await fetch("/api/rotate", {
+          method: "POST",
+          body: formData,
         });
-      };
-      reader.readAsDataURL(blob);
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : "Error rotating image";
-      setError(msg);
-      console.error(error);
+
+        if (!response.ok) {
+          const rawText = await response.text().catch(() => "");
+          let errorMsg = "Failed to rotate image";
+          try {
+            const parsed = JSON.parse(rawText);
+            if (parsed?.error) errorMsg = parsed.error;
+          } catch {
+            if (response.status === 413) {
+              errorMsg = "File size exceeds server upload limit.";
+            }
+          }
+          throw new Error(errorMsg);
+        }
+
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const data = event.target?.result as string;
+          setResult({
+            name: `rotated-${file.name}`,
+            data,
+            preview,
+          });
+        };
+        reader.readAsDataURL(blob);
+      } catch (apiErr) {
+        const msg = apiErr instanceof Error ? apiErr.message : "Error rotating image";
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -251,11 +374,12 @@ export default function RotateImage() {
               </div>
             </div>
 
-            {/* Custom Rotation Slider */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="rotate-slider" className="text-sm font-semibold text-gray-950 dark:text-white">
-                  Custom Rotation
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Custom Rotation Slider */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <label htmlFor="rotate-slider" className="text-sm font-semibold text-gray-950 dark:text-white">
+                    Custom Rotation
                 </label>
                 <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
                   {rotation}°
@@ -293,6 +417,7 @@ export default function RotateImage() {
                 onChange={(e) => setQuality(parseInt(e.target.value))}
                 className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded appearance-none cursor-pointer accent-blue-600"
               />
+            </div>
             </div>
 
             {/* Action Buttons */}

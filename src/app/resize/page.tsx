@@ -24,8 +24,8 @@ export default function ResizeImage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const [width, setWidth] = useState(800);
-  const [height, setHeight] = useState(600);
+  const [width, setWidth] = useState<number | string>(800);
+  const [height, setHeight] = useState<number | string>(600);
   const [keepAspect, setKeepAspect] = useState(true);
   const [quality, setQuality] = useState(80);
   const [originalDimensions, setOriginalDimensions] = useState({
@@ -74,22 +74,112 @@ export default function ResizeImage() {
     reader.readAsDataURL(uploadedFile);
   };
 
-  const handleWidthChange = (value: number) => {
-    const validValue = isNaN(value) ? 0 : value;
-    setWidth(validValue);
-    if (keepAspect && originalDimensions.width > 0 && validValue > 0) {
+  const handleWidthChange = (val: string | number, targetInput?: HTMLInputElement) => {
+    if (val === "" || val === undefined) {
+      setWidth("");
+      return;
+    }
+    const cleaned = typeof val === "string" ? val.replace(/^0+(?=\d)/, "") : String(val);
+    if (targetInput && targetInput.value !== cleaned) {
+      targetInput.value = cleaned;
+    }
+    const num = parseInt(cleaned, 10);
+    if (isNaN(num)) {
+      setWidth("");
+      return;
+    }
+    setWidth(num);
+    if (keepAspect && originalDimensions.width > 0 && num > 0) {
       const ratio = originalDimensions.height / originalDimensions.width;
-      setHeight(Math.round(validValue * ratio));
+      setHeight(Math.round(num * ratio));
     }
   };
 
-  const handleHeightChange = (value: number) => {
-    const validValue = isNaN(value) ? 0 : value;
-    setHeight(validValue);
-    if (keepAspect && originalDimensions.height > 0 && validValue > 0) {
-      const ratio = originalDimensions.width / originalDimensions.height;
-      setWidth(Math.round(validValue * ratio));
+  const handleHeightChange = (val: string | number, targetInput?: HTMLInputElement) => {
+    if (val === "" || val === undefined) {
+      setHeight("");
+      return;
     }
+    const cleaned = typeof val === "string" ? val.replace(/^0+(?=\d)/, "") : String(val);
+    if (targetInput && targetInput.value !== cleaned) {
+      targetInput.value = cleaned;
+    }
+    const num = parseInt(cleaned, 10);
+    if (isNaN(num)) {
+      setHeight("");
+      return;
+    }
+    setHeight(num);
+    if (keepAspect && originalDimensions.height > 0 && num > 0) {
+      const ratio = originalDimensions.width / originalDimensions.height;
+      setWidth(Math.round(num * ratio));
+    }
+  };
+
+  const resizeImageClientSide = async (
+    sourceFile: File,
+    targetW: number,
+    targetH: number,
+    targetQuality: number
+  ): Promise<{ dataUrl: string; blob: Blob; width: number; height: number }> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      const objectUrl = URL.createObjectURL(sourceFile);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+
+        const canvas = document.createElement("canvas");
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) {
+          reject(new Error("Could not initialize canvas context"));
+          return;
+        }
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, targetW, targetH);
+
+        const fileType = sourceFile.type.toLowerCase();
+        let mimeType = "image/jpeg";
+        if (fileType.includes("png")) {
+          mimeType = "image/png";
+        } else if (fileType.includes("webp")) {
+          mimeType = "image/webp";
+        }
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error("Failed to generate resized image"));
+              return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const dataUrl = e.target?.result as string;
+              resolve({
+                dataUrl,
+                blob,
+                width: targetW,
+                height: targetH,
+              });
+            };
+            reader.readAsDataURL(blob);
+          },
+          mimeType,
+          targetQuality / 100
+        );
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Failed to load source image"));
+      };
+
+      img.src = objectUrl;
+    });
   };
 
   const resizeImage = async () => {
@@ -98,54 +188,77 @@ export default function ResizeImage() {
       return;
     }
 
-    if (width <= 0 || height <= 0) {
+    const targetWidth = Number(width);
+    const targetHeight = Number(height);
+
+    if (!targetWidth || !targetHeight || targetWidth <= 0 || targetHeight <= 0) {
       setError("Please enter valid width and height dimensions greater than 0");
       return;
     }
 
     setLoading(true);
+    setError(null);
+
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("width", String(width));
-      formData.append("height", String(height));
-      formData.append("keepAspectRatio", String(keepAspect));
-      formData.append("quality", String(quality));
+      // 1. Client-side canvas resize (instant, handles files of any size without Vercel serverless limits)
+      const clientResult = await resizeImageClientSide(
+        file,
+        targetWidth,
+        targetHeight,
+        quality
+      );
 
-      const response = await fetch("/api/resize", {
-        method: "POST",
-        body: formData,
+      setResult({
+        name: `resized-${file.name}`,
+        data: clientResult.dataUrl,
+        preview,
+        width: clientResult.width,
+        height: clientResult.height,
+        size: clientResult.blob.size,
       });
+    } catch (clientErr) {
+      console.warn("Client-side resize failed, falling back to server API:", clientErr);
+      // 2. Fallback to API
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("width", String(targetWidth));
+        formData.append("height", String(targetHeight));
+        formData.append("keepAspectRatio", String(keepAspect));
+        formData.append("quality", String(quality));
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to resize image");
-      }
+        const response = await fetch("/api/resize", {
+          method: "POST",
+          body: formData,
+        });
 
-      const blob = await response.blob();
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || "Failed to resize image");
+        }
 
-      // Create preview data URL for result and read actual dimensions
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const data = event.target?.result as string;
-        const img = new window.Image();
-        img.onload = () => {
-          setResult({
-            name: `resized-${file.name}`,
-            data,
-            preview,
-            width: img.width,
-            height: img.height,
-            size: blob.size,
-          });
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const data = event.target?.result as string;
+          const img = new window.Image();
+          img.onload = () => {
+            setResult({
+              name: `resized-${file.name}`,
+              data,
+              preview,
+              width: img.width,
+              height: img.height,
+              size: blob.size,
+            });
+          };
+          img.src = data;
         };
-        img.src = data;
-      };
-      reader.readAsDataURL(blob);
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : "Error resizing image";
-      setError(msg);
-      console.error(error);
+        reader.readAsDataURL(blob);
+      } catch (apiErr) {
+        const msg = apiErr instanceof Error ? apiErr.message : "Error resizing image";
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -312,57 +425,62 @@ export default function ResizeImage() {
               </label>
             </div>
 
-            {/* Dimension Controls */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div>
+            {/* Dimension & Quality Controls */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="md:col-span-1">
                 <label htmlFor="resize-width" className="block text-sm font-semibold text-gray-950 dark:text-white mb-2">
                   Width (px)
                 </label>
                 <input
                   id="resize-width"
                   type="number"
+                  min="1"
                   aria-label="Target width in pixels"
                   value={width}
-                  onChange={(e) => handleWidthChange(parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => handleWidthChange(e.target.value, e.target)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:m-0"
                 />
               </div>
-              <div>
+              <div className="md:col-span-1">
                 <label htmlFor="resize-height" className="block text-sm font-semibold text-gray-950 dark:text-white mb-2">
                   Height (px)
                 </label>
                 <input
                   id="resize-height"
                   type="number"
+                  min="1"
                   aria-label="Target height in pixels"
                   value={height}
-                  onChange={(e) => handleHeightChange(parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => handleHeightChange(e.target.value, e.target)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:m-0"
                 />
+              </div>
+              {/* Quality Slider */}
+              <div className="md:col-span-2">
+                <div className="flex items-center justify-between mb-2">
+                  <label htmlFor="resize-quality" className="text-sm font-semibold text-gray-950 dark:text-white">
+                    Quality
+                  </label>
+                  <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                    {quality}%
+                  </span>
+                </div>
+                <div className="h-[42px] flex items-center">
+                  <input
+                    id="resize-quality"
+                    type="range"
+                    aria-label="Resize quality adjustment"
+                    min="10"
+                    max="100"
+                    value={quality}
+                    onChange={(e) => setQuality(parseInt(e.target.value))}
+                    className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded appearance-none cursor-pointer accent-blue-600"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Quality Slider */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="resize-quality" className="text-sm font-semibold text-gray-950 dark:text-white">
-                  Quality
-                </label>
-                <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                  {quality}%
-                </span>
-              </div>
-              <input
-                id="resize-quality"
-                type="range"
-                aria-label="Resize quality adjustment"
-                min="10"
-                max="100"
-                value={quality}
-                onChange={(e) => setQuality(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded appearance-none cursor-pointer accent-blue-600"
-              />
-            </div>
+            
 
             {/* Action Buttons */}
             <div className="flex gap-3 items-center">
@@ -380,7 +498,7 @@ export default function ResizeImage() {
                 className="flex-1 px-5 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold rounded-md transition-colors flex items-center justify-center gap-2 shadow-md cursor-pointer text-sm md:text-base"
               >
                 <AdjustmentsHorizontalIcon aria-hidden="true" className="w-6 h-6" />
-                <span>{loading ? "Processing..." : "Resize Image"}</span>
+                <span>{loading ? "Processing..." : "Resize"}</span>
               </button>
             </div>
           </div>

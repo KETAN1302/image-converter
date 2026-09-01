@@ -370,11 +370,11 @@ export default function PdfToImagePage() {
                   aria-label="Output image format"
                   value={outputFormat}
                   onChange={(e) => setOutputFormat(e.target.value)}
-                  className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium rounded-md p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium rounded-md p-3 text-sm outline-none transition-all"
                 >
-                  <option value="png">PNG - Lossless (Recommended)</option>
-                  <option value="jpg">JPEG - Best for smaller file size</option>
-                  <option value="webp">WebP - Modern compressed format</option>
+                  <option value="png" className="bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium">PNG</option>
+                  <option value="jpg" className="bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium">JPEG</option>
+                  <option value="webp" className="bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium">WebP</option>
                 </select>
               </div>
 
@@ -421,7 +421,7 @@ export default function PdfToImagePage() {
                     name="rangeType"
                     checked={rangeType === "all"}
                     onChange={() => setRangeType("all")}
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                    className="w-4 h-4 text-blue-600"
                   />
                   <span>All Pages ({pdfInfo.totalPages})</span>
                 </label>
@@ -431,7 +431,7 @@ export default function PdfToImagePage() {
                     name="rangeType"
                     checked={rangeType === "custom"}
                     onChange={() => setRangeType("custom")}
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                    className="w-4 h-4 text-blue-600"
                   />
                   <span>Custom Range</span>
                 </label>
@@ -446,7 +446,7 @@ export default function PdfToImagePage() {
                     value={pageRange}
                     onChange={(e) => setPageRange(e.target.value)}
                     placeholder="e.g. 1, 3, 5-8"
-                    className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium rounded-md p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-white font-medium rounded-md p-3 text-sm outline-none transition-all"
                   />
                   <p className="text-xs font-medium text-gray-950 dark:text-white mt-2">
                     Enter comma-separated page numbers or ranges (e.g. 1, 3,

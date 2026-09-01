@@ -519,7 +519,7 @@ export default function BlurImagePage() {
                   </span>
                 </div>
                 <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                  👉 Click & drag anywhere over faces, license plates, or text
+                  Click & drag anywhere over faces, license plates, or text
                   to blur
                 </p>
               </div>

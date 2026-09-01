@@ -132,78 +132,243 @@ export default function Home() {
     setResults(null);
   };
 
+function createIcoFromPngs(pngBuffers: { size: number; data: Uint8Array }[]): Uint8Array {
+  const numImages = pngBuffers.length;
+  const headerSize = 6;
+  const dirEntrySize = 16;
+  const dirSize = numImages * dirEntrySize;
+
+  let totalSize = headerSize + dirSize;
+  for (const png of pngBuffers) {
+    totalSize += png.data.length;
+  }
+
+  const out = new Uint8Array(totalSize);
+  const view = new DataView(out.buffer);
+
+  // Header: 2 bytes reserved (0), 2 bytes type (1 = ICO), 2 bytes image count
+  view.setUint16(0, 0, true);
+  view.setUint16(2, 1, true);
+  view.setUint16(4, numImages, true);
+
+  let currentImageOffset = headerSize + dirSize;
+
+  for (let i = 0; i < numImages; i++) {
+    const png = pngBuffers[i];
+    const entryOffset = headerSize + i * dirEntrySize;
+
+    out[entryOffset + 0] = png.size >= 256 ? 0 : png.size;
+    out[entryOffset + 1] = png.size >= 256 ? 0 : png.size;
+    out[entryOffset + 2] = 0;
+    out[entryOffset + 3] = 0;
+    view.setUint16(entryOffset + 4, 1, true);
+    view.setUint16(entryOffset + 6, 32, true);
+    view.setUint32(entryOffset + 8, png.data.length, true);
+    view.setUint32(entryOffset + 12, currentImageOffset, true);
+
+    out.set(png.data, currentImageOffset);
+    currentImageOffset += png.data.length;
+  }
+
+  return out;
+}
+
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const len = bytes.byteLength;
+  const chunkSize = 8192;
+  for (let i = 0; i < len; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, len));
+    binary += String.fromCharCode.apply(null, chunk as unknown as number[]);
+  }
+  return btoa(binary);
+}
+
+  const generateIconsClientSide = async (
+    sourceFile: File,
+    sizes: number[]
+  ): Promise<ConvertedResults> => {
+    const img = new window.Image();
+    const objectUrl = URL.createObjectURL(sourceFile);
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("Failed to load source image"));
+      img.src = objectUrl;
+    });
+    URL.revokeObjectURL(objectUrl);
+
+    const icons: IconItem[] = [];
+    const zip = new JSZip();
+    const pngItems: { size: number; data: Uint8Array }[] = [];
+
+    const SIZE_LABELS: Record<number, string> = {
+      16: "Favicon",
+      32: "Browser tab",
+      48: "Desktop shortcut",
+      64: "High DPI icon",
+      128: "Large preview",
+      256: "Extra large icon",
+    };
+
+    const sortedSizes = [...sizes].sort((a, b) => a - b);
+
+    for (const sz of sortedSizes) {
+      const canvas = document.createElement("canvas");
+      canvas.width = sz;
+      canvas.height = sz;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) continue;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, 0, 0, sz, sz);
+
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          (b) => (b ? resolve(b) : reject(new Error("Failed to render icon"))),
+          "image/png"
+        );
+      });
+
+      const arrayBuffer = await blob.arrayBuffer();
+      const pngUint8 = new Uint8Array(arrayBuffer);
+      pngItems.push({ size: sz, data: pngUint8 });
+
+      // Generate individual ICO
+      const icoUint8 = createIcoFromPngs([{ size: sz, data: pngUint8 }]);
+      const icoBase64 = uint8ArrayToBase64(icoUint8);
+      const pngBase64 = uint8ArrayToBase64(pngUint8);
+
+      const icoName = `favicon${sz}x${sz}.ico`;
+      const pngName = `favicon${sz}x${sz}.png`;
+
+      zip.file(icoName, icoUint8);
+      zip.file(pngName, pngUint8);
+
+      icons.push({
+        size: sz,
+        label: SIZE_LABELS[sz] || `${sz}x${sz}`,
+        icoName,
+        pngName,
+        icoBase64,
+        pngBase64,
+        icoSize: icoUint8.byteLength,
+        pngSize: pngUint8.byteLength,
+      });
+    }
+
+    // Generate combined multi-resolution ICO containing all sizes
+    const combinedIcoUint8 = createIcoFromPngs(pngItems);
+    const combinedIcoBase64 = uint8ArrayToBase64(combinedIcoUint8);
+    zip.file("favicon-multisize.ico", combinedIcoUint8);
+
+    const zipBlob = await zip.generateAsync({ type: "blob", compression: "STORE" });
+    const zipUrl = URL.createObjectURL(zipBlob);
+    const zipFileName = "favicon.zip";
+
+    return {
+      baseName: "favicon",
+      zipUrl,
+      zipFileName,
+      zipSize: zipBlob.size,
+      combinedIco: {
+        name: "favicon-multisize.ico",
+        base64: combinedIcoBase64,
+        size: combinedIcoUint8.byteLength,
+      },
+      icons,
+    };
+  };
+
   const handleConvert = async () => {
     if (!file || selectedSizes.length === 0) return;
 
     setLoading(true);
     setError(null);
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("sizes", JSON.stringify(selectedSizes));
-
     try {
-      const res = await fetch("/api/ico", {
-        method: "POST",
-        body: formData,
-      });
+      // 1. Generate multi-resolution and single ICOs directly on client (instant, no server limits)
+      const clientResults = await generateIconsClientSide(file, selectedSizes);
+      setResults(clientResults);
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Conversion failed");
-      }
-
-      const data = await res.json();
-
-      // Create ZIP archive using JSZip
-      const zip = new JSZip();
-
-      // 1. Add combined multi-resolution ICO: favicon-multisize.ico
-      zip.file(
-        data.combinedIco.name || "favicon-multisize.ico",
-        data.combinedIco.base64,
-        { base64: true },
-      );
-
-      // 2. Add individual .ico files: favicon16x16.ico, favicon32x32.ico, etc.
-      data.icons.forEach((icon: IconItem) => {
-        zip.file(icon.icoName, icon.icoBase64, { base64: true });
-      });
-
-      // Generate the ZIP blob without compression overhead (STORE mode)
-      const zipBlob = await zip.generateAsync({
-        type: "blob",
-        compression: "STORE",
-      });
-
-      const zipUrl = URL.createObjectURL(zipBlob);
-      const zipFileName = "favicon.zip";
-
-      const convertedData: ConvertedResults = {
-        baseName: "favicon",
-        zipUrl,
-        zipFileName,
-        zipSize: zipBlob.size,
-        combinedIco: data.combinedIco,
-        icons: data.icons,
-      };
-
-      setResults(convertedData);
-
-      // Automatically trigger ZIP download
       const a = document.createElement("a");
-      a.href = zipUrl;
-      a.download = zipFileName;
+      a.href = clientResults.zipUrl;
+      a.download = clientResults.zipFileName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-    } catch (error) {
-      console.error("Conversion error:", error);
-      const msg =
-        error instanceof Error
-          ? error.message
-          : "Failed to convert image. Please try again.";
-      setError(msg);
+    } catch (clientErr) {
+      console.warn("Client ICO creation failed, attempting server API:", clientErr);
+      // 2. Server API fallback
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("sizes", JSON.stringify(selectedSizes));
+
+        const res = await fetch("/api/ico", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!res.ok) {
+          const rawText = await res.text().catch(() => "");
+          let errorMsg = "Conversion failed";
+          try {
+            const parsed = JSON.parse(rawText);
+            if (parsed?.error) errorMsg = parsed.error;
+          } catch {
+            if (res.status === 413) {
+              errorMsg = "File size exceeds server upload limit.";
+            }
+          }
+          throw new Error(errorMsg);
+        }
+
+        const data = await res.json();
+        const zip = new JSZip();
+
+        zip.file(
+          data.combinedIco.name || "favicon-multisize.ico",
+          data.combinedIco.base64,
+          { base64: true },
+        );
+
+        data.icons.forEach((icon: IconItem) => {
+          zip.file(icon.icoName, icon.icoBase64, { base64: true });
+        });
+
+        const zipBlob = await zip.generateAsync({
+          type: "blob",
+          compression: "STORE",
+        });
+
+        const zipUrl = URL.createObjectURL(zipBlob);
+        const zipFileName = "favicon.zip";
+
+        const convertedData: ConvertedResults = {
+          baseName: "favicon",
+          zipUrl,
+          zipFileName,
+          zipSize: zipBlob.size,
+          combinedIco: data.combinedIco,
+          icons: data.icons,
+        };
+
+        setResults(convertedData);
+
+        const a = document.createElement("a");
+        a.href = zipUrl;
+        a.download = zipFileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (fallbackErr) {
+        console.error("Conversion error:", fallbackErr);
+        const msg =
+          fallbackErr instanceof Error
+            ? fallbackErr.message
+            : "Failed to convert image. Please try again.";
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -351,7 +516,7 @@ export default function Home() {
                         aria-label={`Include ${size}x${size} pixel icon size`}
                         checked={isSelected}
                         onChange={() => handleSizeToggle(size)}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 mr-3 shrink-0"
+                        className="w-4 h-4 text-blue-600 rounded mr-3 shrink-0"
                       />
                       <div className="min-w-0 flex-1">
                         <span className="text-sm font-bold block text-gray-950 dark:text-white">
